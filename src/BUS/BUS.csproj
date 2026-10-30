@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+<ItemGroup>
+<ProjectReference Include="../DTO/DTO.csproj" />
+<ProjectReference Include="../DAL/DAL.csproj" />
+
+</ItemGroup></Project>
