@@ -1,5 +1,5 @@
 using DTO.Employees;
-using DAL.Employees;
+using DAO.Employees;
 namespace BUS.Employees;
 public sealed class EmployeeService(IEmployeeRepository repository)
 {

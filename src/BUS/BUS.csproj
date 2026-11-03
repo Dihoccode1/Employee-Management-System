@@ -2,6 +2,6 @@
 
 <ItemGroup>
 <ProjectReference Include="../DTO/DTO.csproj" />
-<ProjectReference Include="../DAL/DAL.csproj" />
+<ProjectReference Include="../DAO/DAO.csproj" />
 
 </ItemGroup></Project>

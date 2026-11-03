@@ -1,6 +1,6 @@
 # Ứng dụng quản lý nhân sự
 
-Bộ khung C# WinForms + SQL Server, OOP và kiến trúc 3 lớp. Có luồng tải danh sách nhân viên mẫu; chưa triển khai CRUD, đăng nhập, chấm công và tính lương.
+Bộ khung C# WinForms + SQL Server, OOP và kiến trúc 3 lớp **GUI → BUS → DAO**. DTO là thư viện truyền dữ liệu dùng chung. Hiện có luồng tải danh sách nhân viên mẫu; các thư mục mở rộng mới chỉ là khung, chưa triển khai CRUD, tìm kiếm, chấm công, tính lương, thống kê hay nhập/xuất file.
 
 ## Cấu trúc
 
@@ -8,23 +8,53 @@ Bộ khung C# WinForms + SQL Server, OOP và kiến trúc 3 lớp. Có luồng t
 HumanResourceManagement.sln
 Directory.Build.props
 src/
-  GUI/           # Presentation: giao diện WinForms
-    Forms/           # MainForm.cs + MainForm.Designer.cs
+  GUI/                     # Giao diện WinForms
+    Forms/
+      MainForm.cs          # Kèm MainForm.Designer.cs
+      Employees/
+      Departments/
+      Positions/
+      Contracts/
+      Attendance/
+      Payroll/
+      Lookups/             # Form tra cứu/chọn dữ liệu bằng nút ...
+      Statistics/          # Giao diện thống kê
+      Settings/            # Giao diện tham số
+    Selection/             # Dự kiến giữ kết quả chọn qua biến static
+    Reports/               # Mẫu/bố cục báo cáo
     Controls/
     Resources/
-  BUS/           # Business: service, quy tắc nghiệp vụ
+  BUS/                     # Nghiệp vụ, kiểm tra dữ liệu, tìm kiếm
     ServiceFactory.cs
-  DAL/           # Data Access: repository, truy vấn SQL
-    Infrastructure/  # SqlConnectionFactory
-  DTO/           # Đối tượng truyền dữ liệu dùng chung
+    Employees/             # EmployeeService.cs
+    Departments/, Positions/, Contracts/, Attendance/, Payroll/
+    Statistics/
+    Settings/
+    ImportExport/          # Dự kiến xử lý nhập/xuất .xls
+    Reporting/             # Dự kiến xử lý báo cáo PDF
+  DAO/                     # Kết nối, repository, truy vấn SQL Server
+    Infrastructure/
+      MyConnection.cs
+    Employees/             # IEmployeeRepository + EmployeeRepository
+    Departments/, Positions/, Contracts/, Attendance/, Payroll/
+    Statistics/
+    Settings/
+  DTO/                     # Đối tượng truyền dữ liệu
+    Employees/             # EmployeeDto.cs
+    Departments/, Positions/, Contracts/, Attendance/, Payroll/
+    Statistics/
+    Settings/
 database/
   01_CreateDatabase.sql
   02_SeedData.sql
 docs/
   architecture.md
+  project-requirements.md  # Đối chiếu yêu cầu đồ án và việc cần làm
+  report/                  # Báo cáo cuối kỳ DOC/PDF
+  screenshots/             # Ảnh CSDL, giao diện, cây thư mục
 ```
 
-BUS, DAL và DTO có các thư mục chức năng: Employees, Departments, Positions, Contracts, Attendance, Payroll. Thư mục chưa triển khai có .gitkeep để giữ trong Git.
+Các tên thư mục viết cùng một dòng trong cây trên là những thư mục riêng. Thư mục chưa triển khai có `.gitkeep` để giữ trong Git. Chưa có bảng tham số trong SQL và chưa có thư viện nhập/xuất Excel hoặc PDF.
 
 ## Chạy ứng dụng
 
@@ -47,6 +77,8 @@ Hoặc mở solution trong Visual Studio, đặt GUI làm Startup Project. Cần
 
 - GUI gọi BUS, không viết SQL trong Form.
 - BUS kiểm tra dữ liệu và áp dụng quy tắc nghiệp vụ.
-- DAL truy cập SQL Server; dùng tham số SQL khi thêm dữ liệu đầu vào.
+- DAO truy cập SQL Server; dùng tham số SQL khi thêm dữ liệu đầu vào.
 - DTO chỉ chứa dữ liệu, không phụ thuộc UI hay database.
-- Thêm chức năng theo thứ tự DTO → DAL → BUS → GUI.
+- Thêm chức năng theo thứ tự DTO → DAO → BUS → GUI.
+- Theo yêu cầu môn học, tìm kiếm trên `ArrayList` sẽ nằm trong BUS; biến `static` phục vụ chọn dữ liệu giữa các Form sẽ nằm trong GUI.
+- Xem [kiến trúc](docs/architecture.md) và [đối chiếu yêu cầu đồ án](docs/project-requirements.md) trước khi triển khai.

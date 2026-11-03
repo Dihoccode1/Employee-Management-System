@@ -1,6 +1,6 @@
 using Microsoft.Data.SqlClient;
-namespace DAL.Infrastructure;
-public sealed class SqlConnectionFactory(string connectionString)
+namespace DAO.Infrastructure;
+public sealed class MyConnection(string connectionString)
 {
     public SqlConnection CreateConnection() => new(connectionString);
 }
