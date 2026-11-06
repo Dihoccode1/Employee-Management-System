@@ -6,18 +6,32 @@ Tham chiếu project: GUI → BUS, DTO; BUS → DAO, DTO; DAO → DTO. ServiceFa
 
 OOP: repository đóng gói truy cập dữ liệu; IEmployeeRepository tách hợp đồng khỏi triển khai; constructor nhận dependency để có thể thay repository khi kiểm thử.
 
-## Module dự kiến
+## Nhóm nghiệp vụ theo màu ERD
 
-| Thư mục | Chức năng |
-|---|---|
-| Employees | Hồ sơ nhân viên, thêm/sửa/ngừng làm việc, tìm kiếm |
-| Departments | Phòng ban |
-| Positions | Chức vụ |
-| Contracts | Hợp đồng, thời hạn và lương cơ bản |
-| Attendance | Chấm công |
-| Payroll | Tính và lưu bảng lương |
-| Statistics | Tổng hợp dữ liệu theo khoảng ngày, tháng, quý, năm |
-| Settings | Đọc và cập nhật tham số nghiệp vụ |
+Ba thư mục nhóm được đặt trong mỗi project BUS/DAO/DTO và trong GUI/Forms. Namespace của code đã có được cập nhật theo thư mục, ví dụ `BUS.HumanResources.Employees`.
+
+| Màu | Nhóm | Thư mục con | Bảng/chức năng |
+|---|---|---|---|
+| Xanh lá | HumanResources | Departments | Phòng ban |
+| Xanh lá | HumanResources | Positions | Chức vụ |
+| Xanh lá | HumanResources | Employees | Nhân viên |
+| Xanh lá | HumanResources | Contracts | Hợp đồng lao động |
+| Đỏ | ProjectManagement | Projects | Dự án |
+| Đỏ | ProjectManagement | ProjectDetails | Chi tiết dự án |
+| Đỏ | ProjectManagement | Tasks | Công việc |
+| Đỏ | ProjectManagement | Assignments | Phân công |
+| Xanh lam | TimekeepingPayroll | MonthlyAttendance | Thông tin chấm công tháng |
+| Xanh lam | TimekeepingPayroll | Attendance | Bảng chấm công |
+| Xanh lam | TimekeepingPayroll | AttendanceStatuses | Bảng trạng thái chấm công |
+| Xanh lam | TimekeepingPayroll | Payroll | Bảng lương |
+| Xanh lam | TimekeepingPayroll | SeniorityAllowanceRules | Quy định phụ cấp thâm niên |
+| Xanh lam | TimekeepingPayroll | EmployeeSeniorityAllowances | Nhân viên phụ cấp thâm niên |
+| Xanh lam | TimekeepingPayroll | EmployeeRewards | Nhân viên khen thưởng |
+| Xanh lam | TimekeepingPayroll | RewardRules | Quy định thưởng chung |
+
+Các phần dùng chung (kết nối, thống kê, tham số, tra cứu, Excel/PDF) nằm ngoài ba nhóm. Đây là cách tổ chức module trong kiến trúc 3 lớp, không tạo thêm project hoặc lớp kiến trúc.
+
+ERD gốc: [Sơ đồ quản lý nhân sự](diagrams/ERD_quan_ly_nhan_su_chu_lon.drawio). Schema SQL hiện chưa được cập nhật đầy đủ theo ERD; các thư mục mới chỉ là khung phát triển.
 
 ## Các phần hỗ trợ
 

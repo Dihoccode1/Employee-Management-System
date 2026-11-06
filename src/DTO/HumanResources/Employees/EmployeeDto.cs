@@ -1,4 +1,4 @@
-namespace DTO.Employees;
+namespace DTO.HumanResources.Employees;
 public sealed class EmployeeDto
 {
     public int Id { get; set; }

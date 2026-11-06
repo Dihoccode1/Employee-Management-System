@@ -1,6 +1,6 @@
-using DTO.Employees;
+using DTO.HumanResources.Employees;
 using DAO.Infrastructure;
-namespace DAO.Employees;
+namespace DAO.HumanResources.Employees;
 public sealed class EmployeeRepository(MyConnection factory) : IEmployeeRepository
 {
     public async Task<IReadOnlyList<EmployeeDto>> GetAllAsync(CancellationToken cancellationToken = default)

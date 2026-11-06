@@ -1,5 +1,5 @@
-using BUS.Employees;
-using DAO.Employees;
+using BUS.HumanResources.Employees;
+using DAO.HumanResources.Employees;
 using DAO.Infrastructure;
 namespace BUS;
 public static class ServiceFactory

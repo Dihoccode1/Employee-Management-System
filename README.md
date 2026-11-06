@@ -8,53 +8,67 @@ Bộ khung C# WinForms + SQL Server, OOP và kiến trúc 3 lớp **GUI → BUS 
 HumanResourceManagement.sln
 Directory.Build.props
 src/
-  GUI/                     # Giao diện WinForms
+  GUI/
     Forms/
-      MainForm.cs          # Kèm MainForm.Designer.cs
-      Employees/
-      Departments/
-      Positions/
-      Contracts/
-      Attendance/
-      Payroll/
-      Lookups/             # Form tra cứu/chọn dữ liệu bằng nút ...
-      Statistics/          # Giao diện thống kê
-      Settings/            # Giao diện tham số
-    Selection/             # Dự kiến giữ kết quả chọn qua biến static
-    Reports/               # Mẫu/bố cục báo cáo
+      MainForm.cs                  # Kèm MainForm.Designer.cs
+      HumanResources/              # Xanh lá: nhân sự
+      ProjectManagement/           # Đỏ: dự án và công việc
+      TimekeepingPayroll/          # Xanh lam: chấm công, lương thưởng
+      Lookups/
+      Statistics/
+      Settings/
+    Selection/
+    Reports/
     Controls/
     Resources/
-  BUS/                     # Nghiệp vụ, kiểm tra dữ liệu, tìm kiếm
+  BUS/
+    HumanResources/
+    ProjectManagement/
+    TimekeepingPayroll/
     ServiceFactory.cs
-    Employees/             # EmployeeService.cs
-    Departments/, Positions/, Contracts/, Attendance/, Payroll/
     Statistics/
     Settings/
-    ImportExport/          # Dự kiến xử lý nhập/xuất .xls
-    Reporting/             # Dự kiến xử lý báo cáo PDF
-  DAO/                     # Kết nối, repository, truy vấn SQL Server
-    Infrastructure/
-      MyConnection.cs
-    Employees/             # IEmployeeRepository + EmployeeRepository
-    Departments/, Positions/, Contracts/, Attendance/, Payroll/
+    ImportExport/
+    Reporting/
+  DAO/
+    HumanResources/
+    ProjectManagement/
+    TimekeepingPayroll/
+    Infrastructure/MyConnection.cs
     Statistics/
     Settings/
-  DTO/                     # Đối tượng truyền dữ liệu
-    Employees/             # EmployeeDto.cs
-    Departments/, Positions/, Contracts/, Attendance/, Payroll/
+  DTO/
+    HumanResources/
+    ProjectManagement/
+    TimekeepingPayroll/
     Statistics/
     Settings/
 database/
   01_CreateDatabase.sql
   02_SeedData.sql
 docs/
+  diagrams/                        # File ERD gốc
   architecture.md
-  project-requirements.md  # Đối chiếu yêu cầu đồ án và việc cần làm
-  report/                  # Báo cáo cuối kỳ DOC/PDF
-  screenshots/             # Ảnh CSDL, giao diện, cây thư mục
+  project-requirements.md
+  report/
+  screenshots/
 ```
 
-Các tên thư mục viết cùng một dòng trong cây trên là những thư mục riêng. Thư mục chưa triển khai có `.gitkeep` để giữ trong Git. Chưa có bảng tham số trong SQL và chưa có thư viện nhập/xuất Excel hoặc PDF.
+Ba nhóm màu có cùng cách chia module trong `GUI/Forms`, `BUS`, `DAO` và `DTO`:
+
+| Màu trên ERD | Thư mục nhóm | Các module con |
+|---|---|---|
+| Xanh lá | `HumanResources` | `Departments`, `Positions`, `Employees`, `Contracts` |
+| Đỏ | `ProjectManagement` | `Projects`, `ProjectDetails`, `Tasks`, `Assignments` |
+| Xanh lam | `TimekeepingPayroll` | `MonthlyAttendance`, `Attendance`, `AttendanceStatuses`, `Payroll`, `SeniorityAllowanceRules`, `EmployeeSeniorityAllowances`, `EmployeeRewards`, `RewardRules` |
+
+Các phần hỗ trợ như `Lookups`, `Statistics`, `Settings`, nhập/xuất file và kết nối database được dùng chung. Thư mục chưa triển khai có `.gitkeep` để giữ trong Git. Việc chia nhóm chưa thay đổi schema SQL hoặc triển khai chức năng mới.
+
+## Sơ đồ cơ sở dữ liệu (ERD)
+
+[ERD quản lý nhân sự — file draw.io](docs/diagrams/ERD_quan_ly_nhan_su_chu_lon.drawio)
+
+Tải file và mở bằng draw.io/diagrams.net để xem hoặc chỉnh sửa. Sơ đồ chia thành ba nhóm màu tương ứng với cấu trúc module ở trên. Các script SQL hiện vẫn là schema khởi đầu, chưa đồng bộ đầy đủ với ERD này.
 
 ## Chạy ứng dụng
 

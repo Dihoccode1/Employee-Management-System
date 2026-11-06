@@ -5,11 +5,11 @@
 | Mục trong PDF | Phần phụ trách | Tình trạng / việc tiếp theo |
 |---|---|---|
 | 1. 3-Layer ver2, class MyConnection | GUI, BUS, DAO; DAO/Infrastructure/MyConnection.cs | Đã chia project và có lớp tạo kết nối; cần đối chiếu thêm mẫu ver2 học trên lớp nếu có yêu cầu chi tiết |
-| 2. Tìm kiếm trên ArrayList trong BUS | BUS/Employees và các service liên quan | Chưa triển khai; hiện chỉ đọc danh sách nhân viên |
-| 3. Form main–sub, hai ListView, quan hệ 1–n | GUI/Forms/Employees hoặc Contracts | Dự kiến nhân viên → các hợp đồng; chưa có form |
+| 2. Tìm kiếm trên ArrayList trong BUS | BUS/HumanResources/Employees và các service liên quan | Chưa triển khai; hiện chỉ đọc danh sách nhân viên |
+| 3. Form main–sub, hai ListView, quan hệ 1–n | GUI/Forms/HumanResources/Employees hoặc Contracts | Dự kiến nhân viên → các hợp đồng; chưa có form |
 | 4. Nút ... tìm kiếm, chọn dữ liệu điền form qua static | GUI/Forms/Lookups, GUI/Selection | Đã có thư mục; chưa có form/lớp chọn dữ liệu |
 | 5. Tính duy nhất của dữ liệu | BUS và ràng buộc SQL Server | Đã có UNIQUE cho một số mã; cần bổ sung kiểm tra và thông báo nghiệp vụ |
-| 6. Dữ liệu thay đổi khi phát sinh nghiệp vụ | BUS/Contracts, Attendance, Payroll; DAO tương ứng | Cần thống nhất nghiệp vụ và transaction cho các thao tác liên quan nhiều bảng |
+| 6. Dữ liệu thay đổi khi phát sinh nghiệp vụ | BUS/HumanResources/Contracts, Attendance, Payroll; DAO tương ứng | Cần thống nhất nghiệp vụ và transaction cho các thao tác liên quan nhiều bảng |
 | 7. Trường không cho nhập | GUI và BUS | Ví dụ lương thực nhận do hệ thống tính; kiểm soát cả giao diện và nghiệp vụ |
 | 8. Tìm kiếm nâng cao | Form của module và BUS tương ứng | Cần AND, OR, NOT, >, >=, <, <=, <> trên một/nhiều trường; xử lý ArrayList trong BUS |
 | 9. Table tham số | Settings trong GUI/BUS/DAO/DTO; database | Đã có thư mục; cần thiết kế bảng và quy tắc, ví dụ số giờ làm chuẩn hoặc mức phụ cấp |

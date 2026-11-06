@@ -1,4 +1,4 @@
-using BUS.Employees;
+using BUS.HumanResources.Employees;
 namespace GUI.Forms;
 public partial class MainForm : Form
 {
