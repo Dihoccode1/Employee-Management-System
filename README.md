@@ -47,7 +47,7 @@ database/
   01_CreateDatabase.sql
   02_SeedData.sql
 docs/
-  diagrams/                        # File ERD gốc
+  diagrams/                        # Ảnh ERD và file draw.io gốc
   architecture.md
   project-requirements.md
   report/
@@ -65,6 +65,10 @@ Ba nhóm màu có cùng cách chia module trong `GUI/Forms`, `BUS`, `DAO` và `D
 Các phần hỗ trợ như `Lookups`, `Statistics`, `Settings`, nhập/xuất file và kết nối database được dùng chung. Thư mục chưa triển khai có `.gitkeep` để giữ trong Git. Việc chia nhóm chưa thay đổi schema SQL hoặc triển khai chức năng mới.
 
 ## Sơ đồ cơ sở dữ liệu (ERD)
+
+[![Sơ đồ ERD quản lý nhân sự](docs/diagrams/ERD_quan_ly_nhan_su.png)](docs/diagrams/ERD_quan_ly_nhan_su.png)
+
+Nhấn vào hình để xem ảnh lớn.
 
 [ERD quản lý nhân sự — file draw.io](docs/diagrams/ERD_quan_ly_nhan_su_chu_lon.drawio)
 
