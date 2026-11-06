@@ -20,14 +20,14 @@ Ba thư mục nhóm được đặt trong mỗi project BUS/DAO/DTO và trong GU
 | Đỏ | ProjectManagement | ProjectDetails | Chi tiết dự án |
 | Đỏ | ProjectManagement | Tasks | Công việc |
 | Đỏ | ProjectManagement | Assignments | Phân công |
-| Xanh lam | TimekeepingPayroll | MonthlyAttendance | Thông tin chấm công tháng |
-| Xanh lam | TimekeepingPayroll | Attendance | Bảng chấm công |
-| Xanh lam | TimekeepingPayroll | AttendanceStatuses | Bảng trạng thái chấm công |
-| Xanh lam | TimekeepingPayroll | Payroll | Bảng lương |
-| Xanh lam | TimekeepingPayroll | SeniorityAllowanceRules | Quy định phụ cấp thâm niên |
-| Xanh lam | TimekeepingPayroll | EmployeeSeniorityAllowances | Nhân viên phụ cấp thâm niên |
-| Xanh lam | TimekeepingPayroll | EmployeeRewards | Nhân viên khen thưởng |
-| Xanh lam | TimekeepingPayroll | RewardRules | Quy định thưởng chung |
+| Xanh lam | SalaryInformation | MonthlyAttendance | Thông tin chấm công tháng |
+| Xanh lam | SalaryInformation | Attendance | Bảng chấm công |
+| Xanh lam | SalaryInformation | AttendanceStatuses | Bảng trạng thái chấm công |
+| Xanh lam | SalaryInformation | Payroll | Bảng lương |
+| Xanh lam | SalaryInformation | SeniorityAllowanceRules | Quy định phụ cấp thâm niên |
+| Xanh lam | SalaryInformation | EmployeeSeniorityAllowances | Nhân viên phụ cấp thâm niên |
+| Xanh lam | SalaryInformation | EmployeeRewards | Nhân viên khen thưởng |
+| Xanh lam | SalaryInformation | RewardRules | Quy định thưởng chung |
 
 Các phần dùng chung (kết nối, thống kê, tham số, tra cứu, Excel/PDF) nằm ngoài ba nhóm. Đây là cách tổ chức module trong kiến trúc 3 lớp, không tạo thêm project hoặc lớp kiến trúc.
 

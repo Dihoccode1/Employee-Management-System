@@ -13,7 +13,7 @@ src/
       MainForm.cs                  # Kèm MainForm.Designer.cs
       HumanResources/              # Xanh lá: nhân sự
       ProjectManagement/           # Đỏ: dự án và công việc
-      TimekeepingPayroll/          # Xanh lam: chấm công, lương thưởng
+      SalaryInformation/          # Xanh lam: chấm công, lương thưởng
       Lookups/
       Statistics/
       Settings/
@@ -24,7 +24,7 @@ src/
   BUS/
     HumanResources/
     ProjectManagement/
-    TimekeepingPayroll/
+    SalaryInformation/
     ServiceFactory.cs
     Statistics/
     Settings/
@@ -33,14 +33,14 @@ src/
   DAO/
     HumanResources/
     ProjectManagement/
-    TimekeepingPayroll/
+    SalaryInformation/
     Infrastructure/MyConnection.cs
     Statistics/
     Settings/
   DTO/
     HumanResources/
     ProjectManagement/
-    TimekeepingPayroll/
+    SalaryInformation/
     Statistics/
     Settings/
 database/
@@ -60,7 +60,7 @@ Ba nhóm màu có cùng cách chia module trong `GUI/Forms`, `BUS`, `DAO` và `D
 |---|---|---|
 | Xanh lá | `HumanResources` | `Departments`, `Positions`, `Employees`, `Contracts` |
 | Đỏ | `ProjectManagement` | `Projects`, `ProjectDetails`, `Tasks`, `Assignments` |
-| Xanh lam | `TimekeepingPayroll` | `MonthlyAttendance`, `Attendance`, `AttendanceStatuses`, `Payroll`, `SeniorityAllowanceRules`, `EmployeeSeniorityAllowances`, `EmployeeRewards`, `RewardRules` |
+| Xanh lam | `SalaryInformation` | `MonthlyAttendance`, `Attendance`, `AttendanceStatuses`, `Payroll`, `SeniorityAllowanceRules`, `EmployeeSeniorityAllowances`, `EmployeeRewards`, `RewardRules` |
 
 Các phần hỗ trợ như `Lookups`, `Statistics`, `Settings`, nhập/xuất file và kết nối database được dùng chung. Thư mục chưa triển khai có `.gitkeep` để giữ trong Git. Việc chia nhóm chưa thay đổi schema SQL hoặc triển khai chức năng mới.
 
