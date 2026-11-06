@@ -31,7 +31,7 @@ Ba thư mục nhóm được đặt trong mỗi project BUS/DAO/DTO và trong GU
 
 Các phần dùng chung (kết nối, thống kê, tham số, tra cứu, Excel/PDF) nằm ngoài ba nhóm. Đây là cách tổ chức module trong kiến trúc 3 lớp, không tạo thêm project hoặc lớp kiến trúc.
 
-ERD gốc: [Sơ đồ quản lý nhân sự](diagrams/ERD_quan_ly_nhan_su_chu_lon.drawio). Schema SQL hiện chưa được cập nhật đầy đủ theo ERD; các thư mục mới chỉ là khung phát triển.
+ERD gốc: [Sơ đồ quản lý nhân sự](diagrams/ERD_quan_ly_nhan_su_chu_lon.drawio). Riêng ProjectManagement đã triển khai cả bốn phần; quan hệ được người dùng đồng ý điều chỉnh thành Dự án–Chi tiết 1–1, Chi tiết–Công việc 1–N. Schema thực tế ở `database/03_ProjectManagement.sql`, cách đọc code ở [ProjectManagement](project-management.md). Các module còn lại vẫn chưa được cập nhật đầy đủ theo ERD gốc.
 
 ## Các phần hỗ trợ
 
@@ -48,7 +48,9 @@ Các thư mục hỗ trợ hiện chỉ có `.gitkeep`, chưa có triển khai h
 
 - Tên lớp truy cập dữ liệu là DAO; các class repository hiện tại thuộc DAO, không tạo thêm một project DAL song song.
 - `DAO/Infrastructure/MyConnection.cs` tạo kết nối SQL Server, được truyền vào repository qua constructor. Mỗi truy vấn tự mở và giải phóng kết nối.
-- Khi phát triển tìm kiếm, xử lý trên `ArrayList` trong BUS theo đề bài; mã hiện tại chỉ đọc danh sách nhân viên bằng `IReadOnlyList<EmployeeDto>`.
-- Form main–sub dùng hai `ListView` cho quan hệ một–nhiều, chẳng hạn chọn nhân viên để hiện danh sách hợp đồng. `MainForm` hiện chưa có bố cục menu trái/form con hoặc phần main–sub này.
+- ProjectManagement tìm kiếm cơ bản trên `ArrayList` trong BUS bằng `foreach`; phần nhân viên vẫn đọc bằng `IReadOnlyList<EmployeeDto>`.
+- `ProjectForm` đã có hai `ListView`: chọn dự án ở trên để xem các công việc ở dưới. `MainForm` có bốn nút mở các form ProjectManagement dạng hộp thoại, chưa có menu trái/form con nhúng.
 
-Đây là schema và bộ khung ban đầu. Khi phát triển cần bổ sung validation trong BUS, transaction cho thao tác ghi nhiều bảng và migration cho thay đổi database. Nếu đề tài cần đăng nhập, thiết kế thêm xác thực và phân quyền.
+Các lớp ProjectManagement mới dùng constructor thông thường và DAO trực tiếp để dễ đọc. Không thêm interface/framework cho từng module mới. GUI vẫn gọi BUS qua các đối tượng do `ServiceFactory` tạo, không tham chiếu DAO. `ProjectValidation` kiểm tra dữ liệu ở BUS; `ProjectDatabaseErrors` chuyển lỗi ghi SQL thành thông báo để GUI hiển thị. Các câu ghi dùng tham số SQL, FOREIGN KEY/UNIQUE/CHECK và trigger kiểm tra dự án của phân công; các thao tác chuyển dữ liệu sai quan hệ được rollback tại SQL Server.
+
+Ngoài ProjectManagement, đây vẫn là schema và bộ khung ban đầu. Các module tiếp theo cần validation trong BUS, transaction cho thao tác ghi nhiều bảng và migration cho thay đổi database. Nếu đề tài cần đăng nhập, thiết kế thêm xác thực và phân quyền.

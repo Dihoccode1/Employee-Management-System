@@ -1,6 +1,6 @@
 # Ứng dụng quản lý nhân sự
 
-Bộ khung C# WinForms + SQL Server, OOP và kiến trúc 3 lớp **GUI → BUS → DAO**. DTO là thư viện truyền dữ liệu dùng chung. Hiện có luồng tải danh sách nhân viên mẫu; các thư mục mở rộng mới chỉ là khung, chưa triển khai CRUD, tìm kiếm, chấm công, tính lương, thống kê hay nhập/xuất file.
+Ứng dụng C# WinForms + SQL Server, OOP và kiến trúc 3 lớp **GUI → BUS → DAO**. DTO là thư viện truyền dữ liệu dùng chung. Đã có tải danh sách nhân viên và CRUD/tìm kiếm cho cả bốn phần ProjectManagement: Dự án, Chi tiết dự án, Công việc, Phân công. Các phần chấm công, tính lương, thống kê và nhập/xuất file vẫn là khung.
 
 ## Cấu trúc
 
@@ -62,7 +62,7 @@ Ba nhóm màu có cùng cách chia module trong `GUI/Forms`, `BUS`, `DAO` và `D
 | Đỏ | `ProjectManagement` | `Projects`, `ProjectDetails`, `Tasks`, `Assignments` |
 | Xanh lam | `SalaryInformation` | `MonthlyAttendance`, `Attendance`, `AttendanceStatuses`, `Payroll`, `SeniorityAllowanceRules`, `EmployeeSeniorityAllowances`, `EmployeeRewards`, `RewardRules` |
 
-Các phần hỗ trợ như `Lookups`, `Statistics`, `Settings`, nhập/xuất file và kết nối database được dùng chung. Thư mục chưa triển khai có `.gitkeep` để giữ trong Git. Việc chia nhóm chưa thay đổi schema SQL hoặc triển khai chức năng mới.
+Các phần hỗ trợ như `Lookups`, `Statistics`, `Settings`, nhập/xuất file và kết nối database được dùng chung. Thư mục chưa triển khai có `.gitkeep` để giữ trong Git. Riêng ProjectManagement đã có DTO, DAO, BUS, GUI và script SQL bổ sung; xem [hướng dẫn đọc code và nghiệp vụ](docs/project-management.md).
 
 ## Sơ đồ cơ sở dữ liệu (ERD)
 
@@ -72,12 +72,12 @@ Nhấn vào hình để xem ảnh lớn.
 
 [ERD quản lý nhân sự — file draw.io](docs/diagrams/ERD_quan_ly_nhan_su_chu_lon.drawio)
 
-Tải file và mở bằng draw.io/diagrams.net để xem hoặc chỉnh sửa. Sơ đồ chia thành ba nhóm màu tương ứng với cấu trúc module ở trên. Các script SQL hiện vẫn là schema khởi đầu, chưa đồng bộ đầy đủ với ERD này.
+Tải file và mở bằng draw.io/diagrams.net để xem hoặc chỉnh sửa. Đây là ERD tham khảo ban đầu. Quan hệ ProjectManagement đã được điều chỉnh theo thống nhất với người dùng để tránh khóa ngoại trỏ vòng: Dự án–Chi tiết 1–1, Chi tiết–Công việc 1–N. Xem quan hệ đang triển khai trong [tài liệu ProjectManagement](docs/project-management.md); ảnh/file draw.io cũ chưa cập nhật. Các module còn lại chưa đồng bộ đầy đủ với ERD.
 
 ## Chạy ứng dụng
 
 1. Cài .NET 10 SDK, SQL Server và IDE hỗ trợ .NET 10/WinForms.
-2. Dùng SQL Server Management Studio chạy lần lượt hai script trong database. Script tạo bảng và dữ liệu mẫu chỉ chạy một lần trên database mới.
+2. Dùng SQL Server Management Studio chạy `database/01_CreateDatabase.sql`, `02_SeedData.sql`, `03_ProjectManagement.sql` theo thứ tự. Có thể chạy thêm `04_ProjectManagementSeed.sql` để có mẫu dự án/công việc/phân công. Script 01/02 chỉ chạy một lần trên database mới; database đã có schema nền chỉ cần bổ sung 03 và tùy chọn 04. Script 03/04 có thể chạy lại trên schema này.
 3. Mở PowerShell tại thư mục solution:
 
 ```powershell
@@ -89,7 +89,9 @@ dotnet run --project src/GUI
 
 Thay localhost bằng tên SQL Server thực tế, ví dụ .\SQLEXPRESS. TrustServerCertificate=True chỉ dành cho phát triển cục bộ; khi triển khai dùng chứng chỉ hợp lệ. Không lưu mật khẩu vào Git.
 
-Hoặc mở solution trong Visual Studio, đặt GUI làm Startup Project. Cần thiết lập biến môi trường trước khi mở IDE. Bấm **Tải danh sách nhân viên** để kiểm tra kết nối.
+Hoặc mở solution trong Visual Studio, đặt GUI làm Startup Project. Cần thiết lập biến môi trường trước khi mở IDE. Bấm **Tải danh sách nhân viên** để kiểm tra kết nối; dùng bốn nút **Dự án**, **Chi tiết dự án**, **Công việc**, **Phân công** để mở form tương ứng.
+
+ProjectManagement đã có bộ kiểm thử SQL Server và form tại `tests/ProjectManagement.SmokeTests`. Xem cách chạy và luồng xử lý đơn giản trong [hướng dẫn ProjectManagement](docs/project-management.md).
 
 ## Quy ước
 
