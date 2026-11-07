@@ -2,13 +2,17 @@
 
 Luồng xử lý: GUI → BUS → DAO → SQL Server. DTO dùng chung để trao đổi dữ liệu, không phải lớp xử lý thứ tư.
 
+Phần web có luồng: trình duyệt (HTML/CSS/JavaScript) → ASP.NET Core Web API → BUS → DAO → SQL Server. API là điểm vào HTTP của lớp giao diện, dùng chung BUS/DAO/DTO với WinForms. Các file giao diện web được phục vụ từ `API/wwwroot`.
+
 Tham chiếu project: GUI → BUS, DTO; BUS → DAO, DTO; DAO → DTO. ServiceFactory khởi tạo các dependency, giữ GUI không tham chiếu trực tiếp DAO.
+
+API → BUS, DTO; API không tham chiếu GUI hoặc DAO. `API/Extensions/ServiceCollectionExtensions.cs` đăng ký service bằng `ServiceFactory` của BUS. Chi tiết: [Web API](web-api.md).
 
 OOP: repository đóng gói truy cập dữ liệu; IEmployeeRepository tách hợp đồng khỏi triển khai; constructor nhận dependency để có thể thay repository khi kiểm thử.
 
 ## Nhóm nghiệp vụ theo màu ERD
 
-Ba thư mục nhóm được đặt trong mỗi project BUS/DAO/DTO và trong GUI/Forms. Namespace của code đã có được cập nhật theo thư mục, ví dụ `BUS.HumanResources.Employees`.
+Ba thư mục nhóm được đặt trong mỗi project BUS/DAO/DTO, trong GUI/Forms, API/Controllers và API/wwwroot/pages. Namespace của code đã có được cập nhật theo thư mục, ví dụ `BUS.HumanResources.Employees`.
 
 | Màu | Nhóm | Thư mục con | Bảng/chức năng |
 |---|---|---|---|
@@ -31,7 +35,7 @@ Ba thư mục nhóm được đặt trong mỗi project BUS/DAO/DTO và trong GU
 
 Các phần dùng chung (kết nối, thống kê, tham số, tra cứu, Excel/PDF) nằm ngoài ba nhóm. Đây là cách tổ chức module trong kiến trúc 3 lớp, không tạo thêm project hoặc lớp kiến trúc.
 
-ERD gốc: [Sơ đồ quản lý nhân sự](diagrams/ERD_quan_ly_nhan_su_chu_lon.drawio). Schema SQL hiện chưa được cập nhật đầy đủ theo ERD; các thư mục mới chỉ là khung phát triển.
+ERD gốc: [Sơ đồ quản lý nhân sự](diagrams/ERD_QLNS.drawio). Schema SQL hiện chưa được cập nhật đầy đủ theo ERD; các thư mục mới chỉ là khung phát triển.
 
 ## Các phần hỗ trợ
 
