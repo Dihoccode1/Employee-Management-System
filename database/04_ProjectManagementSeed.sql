@@ -1,51 +1,39 @@
 USE HumanResourceManagement;
 GO
 SET XACT_ABORT ON;
-BEGIN TRY
-    BEGIN TRANSACTION;
+BEGIN TRANSACTION;
 
-    DECLARE @departmentId INT = (SELECT TOP (1) Id FROM dbo.Departments ORDER BY Id);
-    DECLARE @employeeId INT = (SELECT TOP (1) Id FROM dbo.Employees ORDER BY Id);
-    IF @departmentId IS NULL OR @employeeId IS NULL
-        THROW 51003, N'Cần có phòng ban và nhân viên. Hãy chạy 02_SeedData.sql trước.', 1;
+DECLARE @DepartmentId INT = (SELECT TOP (1) Id FROM dbo.Departments ORDER BY Id);
+DECLARE @EmployeeId INT = (SELECT TOP (1) Id FROM dbo.Employees ORDER BY Id);
+IF @DepartmentId IS NULL OR @EmployeeId IS NULL
+    THROW 50001, N'Cần có phòng ban và nhân viên trước khi tạo dữ liệu dự án mẫu.', 1;
 
-    DECLARE @projectId INT = (SELECT TOP (1) id FROM dbo.Projects WHERE name = N'Dự án quản lý nhân sự mẫu' ORDER BY id);
-    IF @projectId IS NULL
-    BEGIN
-        INSERT dbo.Projects (name, startDate, endDate, deadline, description, budget, departmentId, managerId, status)
-        VALUES (N'Dự án quản lý nhân sự mẫu', '20261101', NULL, '20261231',
-                N'Dữ liệu mẫu để thực hành 3 lớp.', 10000000, @departmentId, @employeeId, N'Not started');
-        SET @projectId = CONVERT(INT, SCOPE_IDENTITY());
-    END;
+-- Dữ liệu minh họa, chỉ thêm khi chưa có dự án mẫu này.
+IF NOT EXISTS (SELECT 1 FROM dbo.Projects WHERE Name = N'Dự án mẫu - Quản lý nhân sự')
+BEGIN
+    INSERT INTO dbo.Projects
+        (Name, StartDate, EndDate, Deadline, Description, Budget, DepartmentId, ManagerId, Status)
+    VALUES
+        (N'Dự án mẫu - Quản lý nhân sự', '2026-11-01', NULL, '2026-12-31',
+         N'Dữ liệu minh họa cho bốn màn hình quản lý dự án.', 10000000, @DepartmentId, @EmployeeId, N'Đang thực hiện');
+    DECLARE @ProjectId INT = CONVERT(INT, SCOPE_IDENTITY());
 
-    DECLARE @detailId INT = (SELECT id FROM dbo.ProjectDetails WHERE projectId = @projectId);
-    IF @detailId IS NULL
-    BEGIN
-        INSERT dbo.ProjectDetails (projectId, completionRate, status, allowance, reward)
-        VALUES (@projectId, 0, N'Not started', 500000, 1000000);
-        SET @detailId = CONVERT(INT, SCOPE_IDENTITY());
-    END;
+    INSERT INTO dbo.ProjectDetails (ProjectId, CompletionPercentage, Status, Allowance, Bonus)
+    VALUES (@ProjectId, 20, N'Đang thực hiện', 500000, 1000000);
+    DECLARE @DetailId INT = CONVERT(INT, SCOPE_IDENTITY());
 
-    DECLARE @taskId INT = (SELECT TOP (1) id FROM dbo.ProjectTasks WHERE projectDetailId = @detailId AND name = N'Thiết kế giao diện' ORDER BY id);
-    IF @taskId IS NULL
-    BEGIN
-        INSERT dbo.ProjectTasks (projectDetailId, name, description, taskType, priority, startDate,
-            deadline, completedDate, estimatedHours, completionRate, status, notes)
-        VALUES (@detailId, N'Thiết kế giao diện', N'Làm form WinForms đơn giản.', N'GUI', N'Normal',
-            '20261102', '20261130', NULL, 24, 0, N'Not started', N'');
-        SET @taskId = CONVERT(INT, SCOPE_IDENTITY());
-    END;
+    INSERT INTO dbo.ProjectTasks
+        (ProjectDetailId, Name, Description, Type, Priority, StartDate, Deadline, CompletedDate,
+         EstimatedHours, CompletionPercentage, Status, Notes)
+    VALUES
+        (@DetailId, N'Xây dựng màn hình dự án', N'Thêm, sửa, xóa và tìm kiếm.',
+         N'Lập trình', N'Cao', '2026-11-01', '2026-11-30', NULL, 16, 25, N'Đang thực hiện', N'');
+    DECLARE @TaskId INT = CONVERT(INT, SCOPE_IDENTITY());
 
-    IF NOT EXISTS (SELECT 1 FROM dbo.Assignments WHERE taskId = @taskId AND employeeId = @employeeId)
-        INSERT dbo.Assignments (taskId, projectId, employeeId, assignedDate, startDate,
-            deadline, completedDate, completionRate, contributionScore, status, notes)
-        VALUES (@taskId, @projectId, @employeeId, '20261101', '20261102',
-            '20261130', NULL, 0, 0, N'Not started', N'Phân công mẫu.');
-
-    COMMIT TRANSACTION;
-END TRY
-BEGIN CATCH
-    IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+    INSERT INTO dbo.Assignments
+        (TaskId, EmployeeId, AssignedDate, StartDate, Deadline, CompletedDate, CompletionPercentage, Status, Notes)
+    VALUES
+        (@TaskId, @EmployeeId, '2026-11-01', '2026-11-01', '2026-11-30', NULL, 30, N'Đang thực hiện', N'Phân công minh họa.');
+END;
+COMMIT TRANSACTION;
 GO

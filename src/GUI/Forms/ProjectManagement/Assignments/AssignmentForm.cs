@@ -1,278 +1,124 @@
 using System.Collections;
-using BUS.ProjectManagement.Assignments;
-using BUS.ProjectManagement.Projects;
-using BUS.ProjectManagement.ProjectDetails;
-using BUS.ProjectManagement.Tasks;
 using BUS.ProjectManagement;
 using DTO.ProjectManagement;
+using BUS.ProjectManagement.Assignments;
 using DTO.ProjectManagement.Assignments;
-using DTO.ProjectManagement.Projects;
-using DTO.ProjectManagement.ProjectDetails;
-using DTO.ProjectManagement.Tasks;
+using BUS.ProjectManagement.Tasks;
 
 namespace GUI.Forms.ProjectManagement.Assignments;
 
-public partial class AssignmentForm : Form
+public sealed class AssignmentForm : ManagementFormBase
 {
-    private readonly AssignmentBus dataBus;
-    private readonly ProjectBus projectBus;
-    private readonly ProjectDetailBus detailBus;
-    private readonly ProjectTaskBus taskBus;
-    private readonly ProjectLookupBus lookupBus;
-    private int selectedId;
-    private bool isLoading;
+    private readonly AssignmentService _service;
+    private readonly ProjectTaskService _tasks;
+    private readonly ProjectLookupService _lookups;
+    private ArrayList _items = new();
 
-    public AssignmentForm(AssignmentBus dataBus, ProjectBus projectBus, ProjectDetailBus detailBus, ProjectTaskBus taskBus, ProjectLookupBus lookupBus)
+    private readonly ComboBox _taskIdBox = ChoiceBox();
+    private readonly ComboBox _employeeIdBox = ChoiceBox();
+    private readonly DateTimePicker _assignedDateBox = DateBox(false);
+    private readonly DateTimePicker _startDateBox = DateBox(false);
+    private readonly DateTimePicker _deadlineBox = DateBox(false);
+    private readonly DateTimePicker _completedDateBox = DateBox(true);
+    private readonly NumericUpDown _completionPercentageBox = NumberBox(100);
+    private readonly TextBox _statusBox = new() { MaxLength = 50 };
+    private readonly TextBox _notesBox = new() { MaxLength = 2000 };
+
+    public AssignmentForm(AssignmentService service, ProjectTaskService tasks, ProjectLookupService lookups)
+        : base("Quản lý phân công")
     {
-        this.dataBus = dataBus;
-        this.projectBus = projectBus;
-        this.detailBus = detailBus;
-        this.taskBus = taskBus;
-        this.lookupBus = lookupBus;
-        initializeControls();
-        clearFields();
+        _service = service;
+        _tasks = tasks;
+        _lookups = lookups;
+
+        AddField("Công việc", _taskIdBox);
+        AddField("Nhân viên", _employeeIdBox);
+        AddField("Ngày phân công", _assignedDateBox);
+        AddField("Ngày bắt đầu", _startDateBox);
+        AddField("Hạn hoàn thành", _deadlineBox);
+        AddField("Ngày hoàn thành", _completedDateBox);
+        AddField("Tiến độ (%)", _completionPercentageBox);
+        AddField("Trạng thái", _statusBox);
+        AddField("Ghi chú", _notesBox);
+
+        AddColumn(nameof(AssignmentDto.Id), "Mã", null);
+        AddColumn(nameof(AssignmentDto.TaskName), "Công việc", null);
+        AddColumn(nameof(AssignmentDto.EmployeeName), "Nhân viên", null);
+        AddColumn(nameof(AssignmentDto.ProjectName), "Dự án", null);
+        AddColumn(nameof(AssignmentDto.CompletionPercentage), "Tiến độ (%)", "N2");
+        AddColumn(nameof(AssignmentDto.Status), "Trạng thái", null);
+        AddColumn(nameof(AssignmentDto.AssignedDate), "Ngày phân công", "dd/MM/yyyy");
+        AddColumn(nameof(AssignmentDto.StartDate), "Ngày bắt đầu", "dd/MM/yyyy");
+        AddColumn(nameof(AssignmentDto.Deadline), "Hạn hoàn thành", "dd/MM/yyyy");
+        AddColumn(nameof(AssignmentDto.CompletedDate), "Ngày hoàn thành", "dd/MM/yyyy");
+        AddColumn(nameof(AssignmentDto.Notes), "Ghi chú", null);
     }
 
-    private void formShown(object? sender, EventArgs e)
+    protected override async Task LoadRecordsAsync()
     {
-        reloadData();
+        var tasks = await _tasks.GetAllAsync();
+        BindChoices(_taskIdBox, tasks.Select(item => new LookupDto
+        {
+            Id = item.Id, Name = $"#{item.Id} - {item.Name} ({item.ProjectName})"
+        }).ToList());
+        BindChoices(_employeeIdBox, await _lookups.GetEmployeesAsync());
+        _items = new ArrayList(await _service.GetAllAsync());
     }
 
-    private void loadLookups()
+    protected override void ApplySearch()
     {
-        List<LookupItemDto> options = new List<LookupItemDto>();
-        foreach (ProjectDto item in projectBus.getAll())
-            options.Add(new LookupItemDto { id = item.id, name = item.id + " - " + item.name });
-        ProjectFormControls.bindOptions(projectIdComboBox, options);
-        ProjectFormControls.bindOptions(employeeIdComboBox, lookupBus.getEmployees());
-        ProjectFormControls.bindOptions(taskIdComboBox, new List<LookupItemDto>());
+        Grid.DataSource = _service.Search(_items, SearchBox.Text);
     }
 
-    private void reloadData()
+    protected override void FillInputs()
     {
-        isLoading = true;
-        try
-        {
-            itemListView.Items.Clear();
-            clearFields();
-            loadLookups();
-            showItems(dataBus.search(searchTextBox.Text));
-        }
-        catch (Exception exception)
-        {
-            ProjectFormControls.showError(exception);
-        }
-        finally
-        {
-            isLoading = false;
-        }
+        if (Grid.CurrentRow?.DataBoundItem is not AssignmentDto item) return;
+        SelectedId = item.Id;
+        _taskIdBox.SelectedValue = item.TaskId;
+        _employeeIdBox.SelectedValue = item.EmployeeId;
+        SetDate(_assignedDateBox, item.AssignedDate);
+        SetDate(_startDateBox, item.StartDate);
+        SetDate(_deadlineBox, item.Deadline);
+        SetDate(_completedDateBox, item.CompletedDate);
+        _completionPercentageBox.Value = item.CompletionPercentage;
+        _statusBox.Text = item.Status;
+        _notesBox.Text = item.Notes;
     }
 
-    private void showItems(ArrayList items)
+    protected override void ClearInputs()
     {
-        itemListView.Items.Clear();
-        foreach (AssignmentDto item in items)
-        {
-            ListViewItem row = new ListViewItem(item.id.ToString());
-            row.SubItems.Add(item.taskId.ToString());
-            row.SubItems.Add(item.projectId.ToString());
-            row.SubItems.Add(item.employeeId.ToString());
-            row.SubItems.Add(item.assignedDate.ToString("dd/MM/yyyy"));
-            row.SubItems.Add(item.startDate.ToString("dd/MM/yyyy"));
-            row.SubItems.Add(item.deadline.ToString("dd/MM/yyyy"));
-            row.SubItems.Add(item.completedDate?.ToString("dd/MM/yyyy") ?? "");
-            row.SubItems.Add(item.completionRate.ToString());
-            row.SubItems.Add(item.contributionScore.ToString());
-            row.SubItems.Add(item.status);
-            row.SubItems.Add(item.notes);
-            row.Tag = item;
-            itemListView.Items.Add(row);
-        }
+        _taskIdBox.SelectedIndex = -1;
+        _employeeIdBox.SelectedIndex = -1;
+        SetDate(_assignedDateBox, DateTime.Today);
+        SetDate(_startDateBox, DateTime.Today);
+        SetDate(_deadlineBox, DateTime.Today);
+        SetDate(_completedDateBox, null);
+        _completionPercentageBox.Value = 0;
+        _statusBox.Text = "Chưa bắt đầu";
+        _notesBox.Text = "";
     }
 
-    private AssignmentDto readInput()
+    protected override Task<int> SaveRecordAsync()
     {
-        return new AssignmentDto
+        // GUI đọc ô nhập; BUS chịu trách nhiệm kiểm tra trước khi lưu.
+        var item = new AssignmentDto
         {
-            id = selectedId,
-            taskId = ProjectFormControls.selectedId(taskIdComboBox),
-            projectId = ProjectFormControls.selectedId(projectIdComboBox),
-            employeeId = ProjectFormControls.selectedId(employeeIdComboBox),
-            assignedDate = assignedDatePicker.Value.Date,
-            startDate = startDatePicker.Value.Date,
-            deadline = deadlinePicker.Value.Date,
-            completedDate = completedDatePicker.Checked ? completedDatePicker.Value.Date : null,
-            completionRate = completionRateInput.Value,
-            contributionScore = contributionScoreInput.Value,
-            status = statusComboBox.Text,
-            notes = notesTextBox.Text
+            Id = SelectedId,
+            TaskId = ChoiceId(_taskIdBox),
+            EmployeeId = ChoiceId(_employeeIdBox),
+            AssignedDate = _assignedDateBox.Value.Date,
+            StartDate = _startDateBox.Value.Date,
+            Deadline = _deadlineBox.Value.Date,
+            CompletedDate = OptionalDate(_completedDateBox),
+            CompletionPercentage = _completionPercentageBox.Value,
+            Status = _statusBox.Text,
+            Notes = _notesBox.Text,
         };
+        return _service.SaveAsync(item);
     }
 
-    private void clearFields()
+    protected override Task DeleteRecordAsync()
     {
-        selectedId = 0;
-        idTextBox.Text = "(tự động)";
-        taskIdComboBox.SelectedIndex = -1;
-        projectIdComboBox.SelectedIndex = -1;
-        employeeIdComboBox.SelectedIndex = -1;
-        assignedDatePicker.Value = DateTime.Today;
-        startDatePicker.Value = DateTime.Today;
-        deadlinePicker.Value = DateTime.Today.AddMonths(1);
-        completedDatePicker.Value = DateTime.Today;
-        completedDatePicker.Checked = false;
-        completionRateInput.Value = 0;
-        contributionScoreInput.Value = 0;
-        statusComboBox.SelectedItem = "Not started";
-        notesTextBox.Clear();
-        ProjectFormControls.bindOptions(taskIdComboBox, new List<LookupItemDto>());
-    }
-
-    private void itemSelectionChanged(object? sender, EventArgs e)
-    {
-        if (isLoading)
-            return;
-        if (itemListView.SelectedItems.Count == 0)
-        {
-            isLoading = true;
-            try { clearFields(); }
-            finally { isLoading = false; }
-            return;
-        }
-        isLoading = true;
-        try
-        {
-            AssignmentDto item = (AssignmentDto)itemListView.SelectedItems[0].Tag!;
-            selectedId = item.id;
-            idTextBox.Text = item.id.ToString();
-            ProjectFormControls.selectId(projectIdComboBox, item.projectId);
-            loadTaskOptions();
-            ProjectFormControls.selectId(taskIdComboBox, item.taskId);
-            ProjectFormControls.selectId(employeeIdComboBox, item.employeeId);
-            assignedDatePicker.Value = item.assignedDate;
-            startDatePicker.Value = item.startDate;
-            deadlinePicker.Value = item.deadline;
-            completedDatePicker.Value = item.completedDate ?? DateTime.Today;
-            completedDatePicker.Checked = item.completedDate.HasValue;
-            completionRateInput.Value = item.completionRate;
-            contributionScoreInput.Value = item.contributionScore;
-            statusComboBox.SelectedItem = item.status;
-            notesTextBox.Text = item.notes;
-        }
-        catch (Exception exception)
-        {
-            clearFields();
-            ProjectFormControls.showError(exception);
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
-
-    private void newButtonClick(object? sender, EventArgs e)
-    {
-        isLoading = true;
-        try
-        {
-            itemListView.SelectedItems.Clear();
-            clearFields();
-        }
-        finally { isLoading = false; }
-    }
-
-    private void addButtonClick(object? sender, EventArgs e)
-    {
-        if (selectedId > 0)
-        {
-            MessageBox.Show("Bấm Nhập mới trước khi thêm bản ghi.", "Thông báo");
-            return;
-        }
-        try
-        {
-            dataBus.add(readInput());
-            MessageBox.Show("Đã thêm thành công.", "Thông báo");
-            reloadData();
-        }
-        catch (Exception exception) { ProjectFormControls.showError(exception); }
-    }
-
-    private void updateButtonClick(object? sender, EventArgs e)
-    {
-        if (selectedId <= 0)
-        {
-            MessageBox.Show("Hãy chọn bản ghi cần sửa.", "Thông báo");
-            return;
-        }
-        try
-        {
-            dataBus.update(readInput());
-            MessageBox.Show("Đã sửa thành công.", "Thông báo");
-            reloadData();
-        }
-        catch (Exception exception) { ProjectFormControls.showError(exception); }
-    }
-
-    private void deleteButtonClick(object? sender, EventArgs e)
-    {
-        if (selectedId <= 0)
-        {
-            MessageBox.Show("Hãy chọn bản ghi cần xóa.", "Thông báo");
-            return;
-        }
-        if (MessageBox.Show("Xóa bản ghi #" + selectedId + "?", "Xác nhận",
-            MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
-            return;
-        try
-        {
-            dataBus.delete(selectedId);
-            MessageBox.Show("Đã xóa thành công.", "Thông báo");
-            reloadData();
-        }
-        catch (Exception exception) { ProjectFormControls.showError(exception); }
-    }
-
-    private void searchButtonClick(object? sender, EventArgs e)
-    {
-        reloadData();
-    }
-
-    private void reloadButtonClick(object? sender, EventArgs e)
-    {
-        searchTextBox.Clear();
-        reloadData();
-    }
-
-    private void projectSelectionChanged(object? sender, EventArgs e)
-    {
-        if (isLoading)
-            return;
-        try
-        {
-            loadTaskOptions();
-        }
-        catch (Exception exception)
-        {
-            ProjectFormControls.bindOptions(taskIdComboBox, new List<LookupItemDto>());
-            ProjectFormControls.showError(exception);
-        }
-    }
-
-    private void loadTaskOptions()
-    {
-        List<LookupItemDto> options = new List<LookupItemDto>();
-        int projectId = ProjectFormControls.selectedId(projectIdComboBox);
-        if (projectId > 0)
-        {
-            foreach (ProjectDetailDto detail in detailBus.getAll())
-            {
-                if (detail.projectId != projectId)
-                    continue;
-                foreach (ProjectTaskDto task in taskBus.getByProjectDetail(detail.id))
-                    options.Add(new LookupItemDto { id = task.id, name = task.id + " - " + task.name });
-                break;
-            }
-        }
-        ProjectFormControls.bindOptions(taskIdComboBox, options);
+        return _service.DeleteAsync(SelectedId);
     }
 }

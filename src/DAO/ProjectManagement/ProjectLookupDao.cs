@@ -1,63 +1,39 @@
-using System.Data;
 using DAO.Infrastructure;
 using DTO.ProjectManagement;
-using Microsoft.Data.SqlClient;
 
 namespace DAO.ProjectManagement;
 
-public class ProjectLookupDao
+public sealed class ProjectLookupDao
 {
-    private readonly MyConnection connectionFactory;
+    private readonly MyConnection _connectionFactory;
 
     public ProjectLookupDao(MyConnection connectionFactory)
     {
-        this.connectionFactory = connectionFactory;
+        _connectionFactory = connectionFactory;
     }
 
-    public List<LookupItemDto> getDepartments()
+    public Task<List<LookupDto>> GetDepartmentsAsync()
     {
-        List<LookupItemDto> items = new List<LookupItemDto>();
-        using SqlConnection connection = connectionFactory.CreateConnection();
-        connection.Open();
-        using SqlCommand command = connection.CreateCommand();
-        command.CommandText = "SELECT Id, Code + N' - ' + Name FROM dbo.Departments ORDER BY Code";
-        using SqlDataReader reader = command.ExecuteReader();
-        while (reader.Read())
-            items.Add(new LookupItemDto { id = reader.GetInt32(0), name = reader.GetString(1) });
+        return ReadAsync("SELECT Id, Code + N' - ' + Name AS Name FROM dbo.Departments ORDER BY Name;");
+    }
+
+    public Task<List<LookupDto>> GetEmployeesAsync()
+    {
+        // Giữ cả nhân viên đã nghỉ để vẫn xem/sửa được dữ liệu lịch sử.
+        return ReadAsync("SELECT Id, EmployeeCode + N' - ' + FullName AS Name FROM dbo.Employees ORDER BY FullName;");
+    }
+
+    private async Task<List<LookupDto>> ReadAsync(string query)
+    {
+        var items = new List<LookupDto>();
+        using var connection = _connectionFactory.CreateConnection();
+        await connection.OpenAsync();
+        using var command = connection.CreateCommand();
+        // query chỉ nhận các câu SQL cố định ở hai hàm phía trên.
+        command.CommandText = query;
+        using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            items.Add(new LookupDto { Id = reader.GetInt32(0), Name = reader.GetString(1) });
         return items;
-    }
-
-    public List<LookupItemDto> getEmployees()
-    {
-        List<LookupItemDto> items = new List<LookupItemDto>();
-        using SqlConnection connection = connectionFactory.CreateConnection();
-        connection.Open();
-        using SqlCommand command = connection.CreateCommand();
-        // Include inactive employees so historical assignments remain editable.
-        command.CommandText = "SELECT Id, EmployeeCode + N' - ' + FullName FROM dbo.Employees ORDER BY EmployeeCode";
-        using SqlDataReader reader = command.ExecuteReader();
-        while (reader.Read())
-            items.Add(new LookupItemDto { id = reader.GetInt32(0), name = reader.GetString(1) });
-        return items;
-    }
-
-    public bool departmentExists(int id)
-    {
-        using SqlConnection connection = connectionFactory.CreateConnection();
-        connection.Open();
-        using SqlCommand command = connection.CreateCommand();
-        command.CommandText = "SELECT COUNT(*) FROM dbo.Departments WHERE Id = @id";
-        command.Parameters.Add("@id", SqlDbType.Int).Value = id;
-        return (int)command.ExecuteScalar()! > 0;
-    }
-
-    public bool employeeExists(int id)
-    {
-        using SqlConnection connection = connectionFactory.CreateConnection();
-        connection.Open();
-        using SqlCommand command = connection.CreateCommand();
-        command.CommandText = "SELECT COUNT(*) FROM dbo.Employees WHERE Id = @id";
-        command.Parameters.Add("@id", SqlDbType.Int).Value = id;
-        return (int)command.ExecuteScalar()! > 0;
     }
 }

@@ -1,17 +1,22 @@
 namespace DTO.ProjectManagement.Assignments;
 
-public class AssignmentDto
+// DTO chỉ mang dữ liệu giữa GUI, BUS và DAO.
+public sealed class AssignmentDto
 {
-    public int id { get; set; }
-    public int taskId { get; set; }
-    public int projectId { get; set; }
-    public int employeeId { get; set; }
-    public DateTime assignedDate { get; set; }
-    public DateTime startDate { get; set; }
-    public DateTime deadline { get; set; }
-    public DateTime? completedDate { get; set; }
-    public decimal completionRate { get; set; }
-    public decimal contributionScore { get; set; }
-    public string status { get; set; } = "Not started";
-    public string notes { get; set; } = "";
+    // Mã do SQL Server tự sinh, người dùng không nhập.
+    public int Id { get; set; }
+    public int TaskId { get; set; }
+    public int EmployeeId { get; set; }
+    public DateTime AssignedDate { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime Deadline { get; set; }
+    public DateTime? CompletedDate { get; set; }
+    public decimal CompletionPercentage { get; set; }
+    public string Status { get; set; } = "";
+    public string Notes { get; set; } = "";
+
+    // Các tên này chỉ dùng để hiển thị, không ghi vào bảng.
+    public string TaskName { get; set; } = "";
+    public string EmployeeName { get; set; } = "";
+    public string ProjectName { get; set; } = "";
 }

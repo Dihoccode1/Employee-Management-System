@@ -1,18 +1,23 @@
 namespace DTO.ProjectManagement.Tasks;
 
-public class ProjectTaskDto
+// DTO chỉ mang dữ liệu giữa GUI, BUS và DAO.
+public sealed class ProjectTaskDto
 {
-    public int id { get; set; }
-    public int projectDetailId { get; set; }
-    public string name { get; set; } = "";
-    public string description { get; set; } = "";
-    public string taskType { get; set; } = "";
-    public string priority { get; set; } = "Normal";
-    public DateTime startDate { get; set; }
-    public DateTime deadline { get; set; }
-    public DateTime? completedDate { get; set; }
-    public decimal estimatedHours { get; set; }
-    public decimal completionRate { get; set; }
-    public string status { get; set; } = "Not started";
-    public string notes { get; set; } = "";
+    // Mã do SQL Server tự sinh, người dùng không nhập.
+    public int Id { get; set; }
+    public int ProjectDetailId { get; set; }
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public string Type { get; set; } = "";
+    public string Priority { get; set; } = "";
+    public DateTime StartDate { get; set; }
+    public DateTime Deadline { get; set; }
+    public DateTime? CompletedDate { get; set; }
+    public decimal EstimatedHours { get; set; }
+    public decimal CompletionPercentage { get; set; }
+    public string Status { get; set; } = "";
+    public string Notes { get; set; } = "";
+
+    // Các tên này chỉ dùng để hiển thị, không ghi vào bảng.
+    public string ProjectName { get; set; } = "";
 }

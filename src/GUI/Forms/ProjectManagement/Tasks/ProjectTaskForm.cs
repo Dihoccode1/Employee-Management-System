@@ -1,234 +1,139 @@
 using System.Collections;
-using BUS.ProjectManagement.Tasks;
-using BUS.ProjectManagement.ProjectDetails;
+using BUS.ProjectManagement;
 using DTO.ProjectManagement;
+using BUS.ProjectManagement.Tasks;
 using DTO.ProjectManagement.Tasks;
-using DTO.ProjectManagement.ProjectDetails;
+using BUS.ProjectManagement.ProjectDetails;
 
 namespace GUI.Forms.ProjectManagement.Tasks;
 
-public partial class ProjectTaskForm : Form
+public sealed class ProjectTaskForm : ManagementFormBase
 {
-    private readonly ProjectTaskBus dataBus;
-    private readonly ProjectDetailBus detailBus;
-    private int selectedId;
-    private bool isLoading;
+    private readonly ProjectTaskService _service;
+    private readonly ProjectDetailService _details;
+    private ArrayList _items = new();
 
-    public ProjectTaskForm(ProjectTaskBus dataBus, ProjectDetailBus detailBus)
+    private readonly ComboBox _projectDetailIdBox = ChoiceBox();
+    private readonly TextBox _nameBox = new() { MaxLength = 200 };
+    private readonly TextBox _descriptionBox = new() { MaxLength = 2000 };
+    private readonly TextBox _typeBox = new() { MaxLength = 100 };
+    private readonly TextBox _priorityBox = new() { MaxLength = 50 };
+    private readonly DateTimePicker _startDateBox = DateBox(false);
+    private readonly DateTimePicker _deadlineBox = DateBox(false);
+    private readonly DateTimePicker _completedDateBox = DateBox(true);
+    private readonly NumericUpDown _estimatedHoursBox = NumberBox(99999999.99m);
+    private readonly NumericUpDown _completionPercentageBox = NumberBox(100);
+    private readonly TextBox _statusBox = new() { MaxLength = 50 };
+    private readonly TextBox _notesBox = new() { MaxLength = 2000 };
+
+    public ProjectTaskForm(ProjectTaskService service, ProjectDetailService details)
+        : base("Quản lý công việc")
     {
-        this.dataBus = dataBus;
-        this.detailBus = detailBus;
-        initializeControls();
-        clearFields();
+        _service = service;
+        _details = details;
+
+        AddField("Chi tiết dự án", _projectDetailIdBox);
+        AddField("Tên", _nameBox);
+        AddField("Mô tả", _descriptionBox);
+        AddField("Loại công việc", _typeBox);
+        AddField("Mức độ ưu tiên", _priorityBox);
+        AddField("Ngày bắt đầu", _startDateBox);
+        AddField("Hạn hoàn thành", _deadlineBox);
+        AddField("Ngày hoàn thành", _completedDateBox);
+        AddField("Số giờ dự kiến", _estimatedHoursBox);
+        AddField("Tiến độ (%)", _completionPercentageBox);
+        AddField("Trạng thái", _statusBox);
+        AddField("Ghi chú", _notesBox);
+
+        AddColumn(nameof(ProjectTaskDto.Id), "Mã", null);
+        AddColumn(nameof(ProjectTaskDto.Name), "Tên", null);
+        AddColumn(nameof(ProjectTaskDto.ProjectName), "Dự án", null);
+        AddColumn(nameof(ProjectTaskDto.ProjectDetailId), "Chi tiết dự án", null);
+        AddColumn(nameof(ProjectTaskDto.Status), "Trạng thái", null);
+        AddColumn(nameof(ProjectTaskDto.CompletionPercentage), "Tiến độ (%)", "N2");
+        AddColumn(nameof(ProjectTaskDto.Priority), "Mức độ ưu tiên", null);
+        AddColumn(nameof(ProjectTaskDto.StartDate), "Ngày bắt đầu", "dd/MM/yyyy");
+        AddColumn(nameof(ProjectTaskDto.Deadline), "Hạn hoàn thành", "dd/MM/yyyy");
+        AddColumn(nameof(ProjectTaskDto.CompletedDate), "Ngày hoàn thành", "dd/MM/yyyy");
+        AddColumn(nameof(ProjectTaskDto.EstimatedHours), "Số giờ dự kiến", "N2");
+        AddColumn(nameof(ProjectTaskDto.Type), "Loại công việc", null);
+        AddColumn(nameof(ProjectTaskDto.Description), "Mô tả", null);
+        AddColumn(nameof(ProjectTaskDto.Notes), "Ghi chú", null);
     }
 
-    private void formShown(object? sender, EventArgs e)
+    protected override async Task LoadRecordsAsync()
     {
-        reloadData();
+        var details = await _details.GetAllAsync();
+        BindChoices(_projectDetailIdBox, details.Select(item => new LookupDto
+        {
+            Id = item.Id, Name = $"Chi tiết #{item.Id} - {item.ProjectName}"
+        }).ToList());
+        _items = new ArrayList(await _service.GetAllAsync());
     }
 
-    private void loadLookups()
+    protected override void ApplySearch()
     {
-        List<LookupItemDto> options = new List<LookupItemDto>();
-        foreach (ProjectDetailDto item in detailBus.getAll())
-            options.Add(new LookupItemDto { id = item.id, name = "CT #" + item.id + " - Dự án #" + item.projectId });
-        ProjectFormControls.bindOptions(projectDetailIdComboBox, options);
+        Grid.DataSource = _service.Search(_items, SearchBox.Text);
     }
 
-    private void reloadData()
+    protected override void FillInputs()
     {
-        isLoading = true;
-        try
-        {
-            itemListView.Items.Clear();
-            clearFields();
-            loadLookups();
-            showItems(dataBus.search(searchTextBox.Text));
-        }
-        catch (Exception exception)
-        {
-            ProjectFormControls.showError(exception);
-        }
-        finally
-        {
-            isLoading = false;
-        }
+        if (Grid.CurrentRow?.DataBoundItem is not ProjectTaskDto item) return;
+        SelectedId = item.Id;
+        _projectDetailIdBox.SelectedValue = item.ProjectDetailId;
+        _nameBox.Text = item.Name;
+        _descriptionBox.Text = item.Description;
+        _typeBox.Text = item.Type;
+        _priorityBox.Text = item.Priority;
+        SetDate(_startDateBox, item.StartDate);
+        SetDate(_deadlineBox, item.Deadline);
+        SetDate(_completedDateBox, item.CompletedDate);
+        _estimatedHoursBox.Value = item.EstimatedHours;
+        _completionPercentageBox.Value = item.CompletionPercentage;
+        _statusBox.Text = item.Status;
+        _notesBox.Text = item.Notes;
     }
 
-    private void showItems(ArrayList items)
+    protected override void ClearInputs()
     {
-        itemListView.Items.Clear();
-        foreach (ProjectTaskDto item in items)
-        {
-            ListViewItem row = new ListViewItem(item.id.ToString());
-            row.SubItems.Add(item.projectDetailId.ToString());
-            row.SubItems.Add(item.name);
-            row.SubItems.Add(item.description);
-            row.SubItems.Add(item.taskType);
-            row.SubItems.Add(item.priority);
-            row.SubItems.Add(item.startDate.ToString("dd/MM/yyyy"));
-            row.SubItems.Add(item.deadline.ToString("dd/MM/yyyy"));
-            row.SubItems.Add(item.completedDate?.ToString("dd/MM/yyyy") ?? "");
-            row.SubItems.Add(item.estimatedHours.ToString());
-            row.SubItems.Add(item.completionRate.ToString());
-            row.SubItems.Add(item.status);
-            row.SubItems.Add(item.notes);
-            row.Tag = item;
-            itemListView.Items.Add(row);
-        }
+        _projectDetailIdBox.SelectedIndex = -1;
+        _nameBox.Text = "";
+        _descriptionBox.Text = "";
+        _typeBox.Text = "";
+        _priorityBox.Text = "";
+        SetDate(_startDateBox, DateTime.Today);
+        SetDate(_deadlineBox, DateTime.Today);
+        SetDate(_completedDateBox, null);
+        _estimatedHoursBox.Value = 0;
+        _completionPercentageBox.Value = 0;
+        _statusBox.Text = "Chưa bắt đầu";
+        _notesBox.Text = "";
     }
 
-    private ProjectTaskDto readInput()
+    protected override Task<int> SaveRecordAsync()
     {
-        return new ProjectTaskDto
+        // GUI đọc ô nhập; BUS chịu trách nhiệm kiểm tra trước khi lưu.
+        var item = new ProjectTaskDto
         {
-            id = selectedId,
-            projectDetailId = ProjectFormControls.selectedId(projectDetailIdComboBox),
-            name = nameTextBox.Text,
-            description = descriptionTextBox.Text,
-            taskType = taskTypeTextBox.Text,
-            priority = priorityComboBox.Text,
-            startDate = startDatePicker.Value.Date,
-            deadline = deadlinePicker.Value.Date,
-            completedDate = completedDatePicker.Checked ? completedDatePicker.Value.Date : null,
-            estimatedHours = estimatedHoursInput.Value,
-            completionRate = completionRateInput.Value,
-            status = statusComboBox.Text,
-            notes = notesTextBox.Text
+            Id = SelectedId,
+            ProjectDetailId = ChoiceId(_projectDetailIdBox),
+            Name = _nameBox.Text,
+            Description = _descriptionBox.Text,
+            Type = _typeBox.Text,
+            Priority = _priorityBox.Text,
+            StartDate = _startDateBox.Value.Date,
+            Deadline = _deadlineBox.Value.Date,
+            CompletedDate = OptionalDate(_completedDateBox),
+            EstimatedHours = _estimatedHoursBox.Value,
+            CompletionPercentage = _completionPercentageBox.Value,
+            Status = _statusBox.Text,
+            Notes = _notesBox.Text,
         };
+        return _service.SaveAsync(item);
     }
 
-    private void clearFields()
+    protected override Task DeleteRecordAsync()
     {
-        selectedId = 0;
-        idTextBox.Text = "(tự động)";
-        projectDetailIdComboBox.SelectedIndex = -1;
-        nameTextBox.Clear();
-        descriptionTextBox.Clear();
-        taskTypeTextBox.Clear();
-        priorityComboBox.SelectedItem = "Normal";
-        startDatePicker.Value = DateTime.Today;
-        deadlinePicker.Value = DateTime.Today.AddMonths(1);
-        completedDatePicker.Value = DateTime.Today;
-        completedDatePicker.Checked = false;
-        estimatedHoursInput.Value = 0;
-        completionRateInput.Value = 0;
-        statusComboBox.SelectedItem = "Not started";
-        notesTextBox.Clear();
-    }
-
-    private void itemSelectionChanged(object? sender, EventArgs e)
-    {
-        if (isLoading)
-            return;
-        if (itemListView.SelectedItems.Count == 0)
-        {
-            isLoading = true;
-            try { clearFields(); }
-            finally { isLoading = false; }
-            return;
-        }
-        isLoading = true;
-        try
-        {
-            ProjectTaskDto item = (ProjectTaskDto)itemListView.SelectedItems[0].Tag!;
-            selectedId = item.id;
-            idTextBox.Text = item.id.ToString();
-            ProjectFormControls.selectId(projectDetailIdComboBox, item.projectDetailId);
-            nameTextBox.Text = item.name;
-            descriptionTextBox.Text = item.description;
-            taskTypeTextBox.Text = item.taskType;
-            priorityComboBox.SelectedItem = item.priority;
-            startDatePicker.Value = item.startDate;
-            deadlinePicker.Value = item.deadline;
-            completedDatePicker.Value = item.completedDate ?? DateTime.Today;
-            completedDatePicker.Checked = item.completedDate.HasValue;
-            estimatedHoursInput.Value = item.estimatedHours;
-            completionRateInput.Value = item.completionRate;
-            statusComboBox.SelectedItem = item.status;
-            notesTextBox.Text = item.notes;
-        }
-        catch (Exception exception)
-        {
-            clearFields();
-            ProjectFormControls.showError(exception);
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
-
-    private void newButtonClick(object? sender, EventArgs e)
-    {
-        isLoading = true;
-        try
-        {
-            itemListView.SelectedItems.Clear();
-            clearFields();
-        }
-        finally { isLoading = false; }
-    }
-
-    private void addButtonClick(object? sender, EventArgs e)
-    {
-        if (selectedId > 0)
-        {
-            MessageBox.Show("Bấm Nhập mới trước khi thêm bản ghi.", "Thông báo");
-            return;
-        }
-        try
-        {
-            dataBus.add(readInput());
-            MessageBox.Show("Đã thêm thành công.", "Thông báo");
-            reloadData();
-        }
-        catch (Exception exception) { ProjectFormControls.showError(exception); }
-    }
-
-    private void updateButtonClick(object? sender, EventArgs e)
-    {
-        if (selectedId <= 0)
-        {
-            MessageBox.Show("Hãy chọn bản ghi cần sửa.", "Thông báo");
-            return;
-        }
-        try
-        {
-            dataBus.update(readInput());
-            MessageBox.Show("Đã sửa thành công.", "Thông báo");
-            reloadData();
-        }
-        catch (Exception exception) { ProjectFormControls.showError(exception); }
-    }
-
-    private void deleteButtonClick(object? sender, EventArgs e)
-    {
-        if (selectedId <= 0)
-        {
-            MessageBox.Show("Hãy chọn bản ghi cần xóa.", "Thông báo");
-            return;
-        }
-        if (MessageBox.Show("Xóa bản ghi #" + selectedId + "?", "Xác nhận",
-            MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
-            return;
-        try
-        {
-            dataBus.delete(selectedId);
-            MessageBox.Show("Đã xóa thành công.", "Thông báo");
-            reloadData();
-        }
-        catch (Exception exception) { ProjectFormControls.showError(exception); }
-    }
-
-    private void searchButtonClick(object? sender, EventArgs e)
-    {
-        reloadData();
-    }
-
-    private void reloadButtonClick(object? sender, EventArgs e)
-    {
-        searchTextBox.Clear();
-        reloadData();
+        return _service.DeleteAsync(SelectedId);
     }
 }

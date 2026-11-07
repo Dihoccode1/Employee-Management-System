@@ -27,7 +27,6 @@ partial class MainForm
         employeesGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells;
         Controls.Add(employeesGrid);
         Controls.Add(loadButton);
-        Controls.Add(createProjectNavigation());
         ClientSize = new Size(1100, 650);
         AutoScaleMode = AutoScaleMode.Font;
         StartPosition = FormStartPosition.CenterScreen;

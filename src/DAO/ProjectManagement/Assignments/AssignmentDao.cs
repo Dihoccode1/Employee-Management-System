@@ -1,149 +1,169 @@
 using System.Data;
+using Microsoft.Data.SqlClient;
 using DAO.Infrastructure;
 using DTO.ProjectManagement.Assignments;
-using Microsoft.Data.SqlClient;
 
 namespace DAO.ProjectManagement.Assignments;
 
-public class AssignmentDao
+public sealed class AssignmentDao : IAssignmentDao
 {
-    private readonly MyConnection connectionFactory;
+    private readonly MyConnection _connectionFactory;
 
     public AssignmentDao(MyConnection connectionFactory)
     {
-        this.connectionFactory = connectionFactory;
+        _connectionFactory = connectionFactory;
     }
 
-    // DAO reads and writes SQL Server data; GUI displays messages.
-    public List<AssignmentDto> getAll()
+    public async Task<List<AssignmentDto>> GetAllAsync()
     {
-        List<AssignmentDto> items = new List<AssignmentDto>();
-        using SqlConnection connection = connectionFactory.CreateConnection();
-        connection.Open();
-        using SqlCommand command = connection.CreateCommand();
-        command.CommandText = "SELECT id, taskId, projectId, employeeId, assignedDate, startDate, deadline, completedDate, completionRate, contributionScore, status, notes FROM dbo.Assignments ORDER BY id";
-        using SqlDataReader reader = command.ExecuteReader();
-        while (reader.Read())
+        var items = new List<AssignmentDto>();
+        using var connection = _connectionFactory.CreateConnection();
+        await connection.OpenAsync();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT a.Id,
+                   a.TaskId,
+                   a.EmployeeId,
+                   a.AssignedDate,
+                   a.StartDate,
+                   a.Deadline,
+                   a.CompletedDate,
+                   a.CompletionPercentage,
+                   a.Status,
+                   a.Notes,
+                   t.Name AS TaskName,
+                   e.FullName AS EmployeeName,
+                   p.Name AS ProjectName
+            FROM dbo.Assignments a
+            JOIN dbo.ProjectTasks t ON t.Id = a.TaskId
+            JOIN dbo.ProjectDetails d ON d.Id = t.ProjectDetailId
+            JOIN dbo.Projects p ON p.Id = d.ProjectId
+            JOIN dbo.Employees e ON e.Id = a.EmployeeId
+            ORDER BY a.Id DESC;
+            """;
+        using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
         {
-            AssignmentDto item = new AssignmentDto
+            items.Add(new AssignmentDto
             {
-                id = reader.GetInt32(0),
-                taskId = reader.GetInt32(1),
-                projectId = reader.GetInt32(2),
-                employeeId = reader.GetInt32(3),
-                assignedDate = reader.GetDateTime(4),
-                startDate = reader.GetDateTime(5),
-                deadline = reader.GetDateTime(6),
-                completedDate = reader.IsDBNull(7) ? null : reader.GetDateTime(7),
-                completionRate = reader.GetDecimal(8),
-                contributionScore = reader.GetDecimal(9),
-                status = reader.GetString(10),
-                notes = reader.GetString(11)
-            };
-            items.Add(item);
+                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                TaskId = reader.GetInt32(reader.GetOrdinal("TaskId")),
+                EmployeeId = reader.GetInt32(reader.GetOrdinal("EmployeeId")),
+                AssignedDate = reader.GetDateTime(reader.GetOrdinal("AssignedDate")),
+                StartDate = reader.GetDateTime(reader.GetOrdinal("StartDate")),
+                Deadline = reader.GetDateTime(reader.GetOrdinal("Deadline")),
+                CompletedDate = reader.IsDBNull(reader.GetOrdinal("CompletedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("CompletedDate")),
+                CompletionPercentage = reader.GetDecimal(reader.GetOrdinal("CompletionPercentage")),
+                Status = reader.GetString(reader.GetOrdinal("Status")),
+                Notes = reader.GetString(reader.GetOrdinal("Notes")),
+                TaskName = reader.GetString(reader.GetOrdinal("TaskName")),
+                EmployeeName = reader.GetString(reader.GetOrdinal("EmployeeName")),
+                ProjectName = reader.GetString(reader.GetOrdinal("ProjectName")),
+            });
         }
         return items;
     }
 
-    public bool exists(int id)
+    public async Task<int> InsertAsync(AssignmentDto item)
     {
-        using SqlConnection connection = connectionFactory.CreateConnection();
-        connection.Open();
-        using SqlCommand command = connection.CreateCommand();
-        command.CommandText = "SELECT COUNT(*) FROM dbo.Assignments WHERE id = @id";
-        command.Parameters.Add("@id", SqlDbType.Int).Value = id;
-        return (int)command.ExecuteScalar()! > 0;
-    }
-
-    public int add(AssignmentDto item)
-    {
-        using SqlConnection connection = connectionFactory.CreateConnection();
-        connection.Open();
-        using SqlCommand command = connection.CreateCommand();
-        command.CommandText = @"INSERT INTO dbo.Assignments
-            (taskId, projectId, employeeId, assignedDate, startDate, deadline, completedDate, completionRate, contributionScore, status, notes)
-            VALUES (@taskId, @projectId, @employeeId, @assignedDate, @startDate, @deadline, @completedDate, @completionRate, @contributionScore, @status, @notes);
-            SELECT CONVERT(INT, SCOPE_IDENTITY());";
-        addParameters(command, item);
+        using var connection = _connectionFactory.CreateConnection();
+        await connection.OpenAsync();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            INSERT INTO dbo.Assignments
+                (TaskId,
+                 EmployeeId,
+                 AssignedDate,
+                 StartDate,
+                 Deadline,
+                 CompletedDate,
+                 CompletionPercentage,
+                 Status,
+                 Notes)
+            OUTPUT INSERTED.Id
+            VALUES
+                (@TaskId,
+                 @EmployeeId,
+                 @AssignedDate,
+                 @StartDate,
+                 @Deadline,
+                 @CompletedDate,
+                 @CompletionPercentage,
+                 @Status,
+                 @Notes);
+            """;
+        AddParameters(command, item);
         try
         {
-            return (int)command.ExecuteScalar()!;
+            return Convert.ToInt32(await command.ExecuteScalarAsync());
         }
         catch (SqlException exception)
         {
-            throw ProjectDatabaseErrors.createWriteError(exception);
+            throw SqlParameterHelper.CreateWriteException(exception);
         }
     }
 
-    public void update(AssignmentDto item)
+    public async Task UpdateAsync(AssignmentDto item)
     {
-        using SqlConnection connection = connectionFactory.CreateConnection();
-        connection.Open();
-        using SqlCommand command = connection.CreateCommand();
-        command.CommandText = @"UPDATE dbo.Assignments SET
-            taskId = @taskId, projectId = @projectId, employeeId = @employeeId, assignedDate = @assignedDate, startDate = @startDate, deadline = @deadline, completedDate = @completedDate, completionRate = @completionRate, contributionScore = @contributionScore, status = @status, notes = @notes
-            WHERE id = @id";
-        command.Parameters.Add("@id", SqlDbType.Int).Value = item.id;
-        addParameters(command, item);
+        using var connection = _connectionFactory.CreateConnection();
+        await connection.OpenAsync();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE dbo.Assignments
+            SET TaskId = @TaskId,
+                EmployeeId = @EmployeeId,
+                AssignedDate = @AssignedDate,
+                StartDate = @StartDate,
+                Deadline = @Deadline,
+                CompletedDate = @CompletedDate,
+                CompletionPercentage = @CompletionPercentage,
+                Status = @Status,
+                Notes = @Notes
+            WHERE Id = @Id;
+            """;
+        command.Parameters.Add("@Id", SqlDbType.Int).Value = item.Id;
+        AddParameters(command, item);
         try
         {
-            if (command.ExecuteNonQuery() == 0)
-                throw new InvalidOperationException("Bản ghi không còn tồn tại. Hãy tải lại danh sách.");
+            if (await command.ExecuteNonQueryAsync() == 0)
+                throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
         }
         catch (SqlException exception)
         {
-            throw ProjectDatabaseErrors.createWriteError(exception);
+            throw SqlParameterHelper.CreateWriteException(exception);
         }
     }
 
-    public void delete(int id)
+    public async Task DeleteAsync(int id)
     {
-        using SqlConnection connection = connectionFactory.CreateConnection();
-        connection.Open();
-        using SqlCommand command = connection.CreateCommand();
-        command.CommandText = "DELETE FROM dbo.Assignments WHERE id = @id";
-        command.Parameters.Add("@id", SqlDbType.Int).Value = id;
+        using var connection = _connectionFactory.CreateConnection();
+        await connection.OpenAsync();
+        using var command = connection.CreateCommand();
+        command.CommandText = "DELETE FROM dbo.Assignments WHERE Id = @Id;";
+        command.Parameters.Add("@Id", SqlDbType.Int).Value = id;
         try
         {
-            if (command.ExecuteNonQuery() == 0)
-                throw new InvalidOperationException("Bản ghi không còn tồn tại. Hãy tải lại danh sách.");
+            // Khóa ngoại trong SQL Server chặn xóa khi còn dữ liệu con.
+            if (await command.ExecuteNonQueryAsync() == 0)
+                throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
         }
-        catch (SqlException exception)
+        catch (SqlException exception) when (exception.Number == 547)
         {
-            throw ProjectDatabaseErrors.createWriteError(exception);
+            throw new InvalidOperationException("Không thể xóa vì còn dữ liệu liên quan. Hãy xóa dữ liệu con trước.", exception);
         }
     }
 
-    public bool assignmentExists(int taskId, int employeeId, int excludedId)
+    private static void AddParameters(SqlCommand command, AssignmentDto item)
     {
-        using SqlConnection connection = connectionFactory.CreateConnection();
-        connection.Open();
-        using SqlCommand command = connection.CreateCommand();
-        command.CommandText = @"SELECT COUNT(*) FROM dbo.Assignments
-                                WHERE taskId = @taskId AND employeeId = @employeeId AND id <> @id";
-        command.Parameters.Add("@taskId", SqlDbType.Int).Value = taskId;
-        command.Parameters.Add("@employeeId", SqlDbType.Int).Value = employeeId;
-        command.Parameters.Add("@id", SqlDbType.Int).Value = excludedId;
-        return (int)command.ExecuteScalar()! > 0;
-    }
-
-    // Always pass input through SQL parameters.
-    private void addParameters(SqlCommand command, AssignmentDto item)
-    {
-        command.Parameters.Add("@taskId", SqlDbType.Int).Value = item.taskId;
-        command.Parameters.Add("@projectId", SqlDbType.Int).Value = item.projectId;
-        command.Parameters.Add("@employeeId", SqlDbType.Int).Value = item.employeeId;
-        command.Parameters.Add("@assignedDate", SqlDbType.Date).Value = item.assignedDate.Date;
-        command.Parameters.Add("@startDate", SqlDbType.Date).Value = item.startDate.Date;
-        command.Parameters.Add("@deadline", SqlDbType.Date).Value = item.deadline.Date;
-        command.Parameters.Add("@completedDate", SqlDbType.Date).Value = (object?)item.completedDate?.Date ?? DBNull.Value;
-        command.Parameters.Add("@completionRate", SqlDbType.Decimal).Value = item.completionRate;
-        command.Parameters["@completionRate"].Precision = 5;
-        command.Parameters["@completionRate"].Scale = 2;
-        command.Parameters.Add("@contributionScore", SqlDbType.Decimal).Value = item.contributionScore;
-        command.Parameters["@contributionScore"].Precision = 10;
-        command.Parameters["@contributionScore"].Scale = 2;
-        command.Parameters.Add("@status", SqlDbType.NVarChar, 30).Value = item.status;
-        command.Parameters.Add("@notes", SqlDbType.NVarChar, 1000).Value = item.notes;
+        // Dùng tham số để dữ liệu nhập không trở thành một phần của câu SQL.
+        command.Parameters.Add("@TaskId", SqlDbType.Int).Value = item.TaskId;
+        command.Parameters.Add("@EmployeeId", SqlDbType.Int).Value = item.EmployeeId;
+        command.Parameters.Add("@AssignedDate", SqlDbType.Date).Value = item.AssignedDate.Date;
+        command.Parameters.Add("@StartDate", SqlDbType.Date).Value = item.StartDate.Date;
+        command.Parameters.Add("@Deadline", SqlDbType.Date).Value = item.Deadline.Date;
+        command.Parameters.Add("@CompletedDate", SqlDbType.Date).Value = (object?)item.CompletedDate?.Date ?? DBNull.Value;
+        SqlParameterHelper.AddDecimal(command, "@CompletionPercentage", item.CompletionPercentage, 5);
+        command.Parameters.Add("@Status", SqlDbType.NVarChar, 50).Value = item.Status;
+        command.Parameters.Add("@Notes", SqlDbType.NVarChar, 2000).Value = item.Notes;
     }
 }
