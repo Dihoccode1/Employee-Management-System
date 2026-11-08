@@ -1,6 +1,6 @@
 # Ứng dụng quản lý nhân sự
 
-Bộ khung C# WinForms + ASP.NET Core Web API + SQL Server, OOP và kiến trúc 3 lớp. Hai giao diện dùng chung nghiệp vụ: **GUI → BUS → DAO** và **Web → API → BUS → DAO**. DTO là thư viện truyền dữ liệu dùng chung. Hiện có luồng tải danh sách nhân viên mẫu trên WinForms và web; các thư mục mở rộng mới chỉ là khung, chưa triển khai CRUD, tìm kiếm, chấm công, tính lương, thống kê hay nhập/xuất file.
+Ứng dụng C# WinForms + SQL Server theo kiến trúc 3 lớp **GUI → BUS → DAO**. DTO là thư viện truyền dữ liệu dùng chung. Đã có chức năng tải nhân viên mẫu và module **ProjectManagement** với bốn màn hình Dự án, Chi tiết dự án, Công việc, Phân công: thêm, sửa, xóa, tìm kiếm. Các module chấm công, tính lương, thống kê và nhập/xuất file vẫn là khung.
 
 ## Cấu trúc
 
@@ -76,7 +76,7 @@ Ba nhóm màu có cùng cách chia module trong `GUI/Forms`, `BUS`, `DAO`, `DTO`
 | Đỏ | `ProjectManagement` | `Projects`, `ProjectDetails`, `Tasks`, `Assignments` |
 | Xanh lam | `SalaryInformation` | `MonthlyAttendance`, `Attendance`, `AttendanceStatuses`, `Payroll`, `SeniorityAllowanceRules`, `EmployeeSeniorityAllowances`, `EmployeeRewards`, `RewardRules` |
 
-Các phần hỗ trợ như `Lookups`, `Statistics`, `Settings`, nhập/xuất file và kết nối database được dùng chung. Thư mục chưa triển khai có `.gitkeep` để giữ trong Git. Việc chia nhóm chưa thay đổi schema SQL hoặc triển khai chức năng mới.
+Các phần hỗ trợ như `Lookups`, `Statistics`, `Settings`, nhập/xuất file và kết nối database được dùng chung. Thư mục chưa triển khai có `.gitkeep` để giữ trong Git. ProjectManagement đã có code và script SQL riêng; các nhóm còn lại giữ phạm vi hiện có.
 
 ## Sơ đồ cơ sở dữ liệu (ERD)
 
@@ -86,12 +86,12 @@ Nhấn vào hình để xem ảnh lớn.
 
 [ERD quản lý nhân sự — file draw.io](docs/diagrams/ERD_QLNS.drawio)
 
-Tải file và mở bằng draw.io/diagrams.net để xem hoặc chỉnh sửa. Sơ đồ chia thành ba nhóm màu tương ứng với cấu trúc module ở trên. Các script SQL hiện vẫn là schema khởi đầu, chưa đồng bộ đầy đủ với ERD này.
+Tải file và mở bằng draw.io/diagrams.net để xem hoặc chỉnh sửa. Sơ đồ gốc được giữ làm tài liệu tham khảo. ProjectManagement triển khai theo các điều chỉnh đã thống nhất: quan hệ một–nhiều từ Dự án đến Phân công, bỏ khóa ngoại ngược và bỏ điểm đánh giá đóng góp. Xem [hướng dẫn ProjectManagement](docs/project-management.md).
 
 ## Chạy ứng dụng
 
 1. Cài .NET 10 SDK, SQL Server và IDE hỗ trợ .NET 10/WinForms.
-2. Dùng SQL Server Management Studio chạy lần lượt hai script trong database. Script tạo bảng và dữ liệu mẫu chỉ chạy một lần trên database mới.
+2. Dùng SQL Server Management Studio chạy `database/01_CreateDatabase.sql`, rồi `database/02_SeedData.sql` trên database mới. Nếu đã có database thì bỏ qua hai script này. Tiếp tục chạy `database/03_ProjectManagement.sql` để tạo bốn bảng dự án; có thể chạy `database/04_ProjectManagementSeed.sql` nếu muốn thêm dữ liệu minh họa. Script 03 và 04 có thể chạy lại trên schema được tạo bởi chính các script này.
 3. Mở PowerShell tại thư mục solution:
 
 ```powershell
@@ -103,7 +103,17 @@ dotnet run --project src/GUI
 
 Thay localhost bằng tên SQL Server thực tế, ví dụ .\SQLEXPRESS. TrustServerCertificate=True chỉ dành cho phát triển cục bộ; khi triển khai dùng chứng chỉ hợp lệ. Không lưu mật khẩu vào Git.
 
-Hoặc mở solution trong Visual Studio, đặt GUI làm Startup Project. Cần thiết lập biến môi trường trước khi mở IDE. Bấm **Tải danh sách nhân viên** để kiểm tra kết nối.
+Hoặc mở solution trong Visual Studio, đặt GUI làm Startup Project. Cần thiết lập biến môi trường trước khi mở IDE. Bấm **Tải danh sách nhân viên** để kiểm tra kết nối. Bốn nút **Dự án / Chi tiết dự án / Công việc / Phân công** mở các màn hình quản lý tương ứng.
+
+Để thêm dữ liệu, đi theo thứ tự Dự án → Chi tiết dự án → Công việc → Phân công. Chọn một dòng để sửa, bấm **Thêm mới** để nhập bản ghi mới, rồi **Lưu**. Chỉ xóa được khi không còn dữ liệu con. Trạng thái nhập bằng chữ; tiến độ, thưởng và phụ cấp đều nhập tay. Với ngày hoàn thành chưa có, bỏ dấu chọn ở ô ngày.
+
+Kiểm thử BUS, không cần SQL Server:
+
+```powershell
+dotnet run --project tests/ProjectManagement.Tests
+```
+
+Hướng dẫn đọc code và kiểm thử SQL nằm trong [docs/project-management.md](docs/project-management.md).
 
 ## Chạy web và API
 
