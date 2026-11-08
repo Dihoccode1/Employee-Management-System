@@ -1,0 +1,8 @@
+@baseUrl = http://localhost:5080
+
+### Kiểm tra tiến trình API (không kiểm tra database)
+GET {{baseUrl}}/health
+
+### Danh sách nhân viên (cần SQL Server và cấu hình kết nối)
+GET {{baseUrl}}/api/employees
+Accept: application/json
