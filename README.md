@@ -1,6 +1,6 @@
 # Ứng dụng quản lý nhân sự
 
-Ứng dụng C# WinForms + SQL Server theo kiến trúc 3 lớp **GUI → BUS → DAO**. DTO là thư viện truyền dữ liệu dùng chung. Đã có chức năng tải nhân viên mẫu và module **ProjectManagement** với bốn màn hình Dự án, Chi tiết dự án, Công việc, Phân công: thêm, sửa, xóa, tìm kiếm. Các module chấm công, tính lương, thống kê và nhập/xuất file vẫn là khung.
+Ứng dụng C# WinForms + SQL Server theo kiến trúc 3 lớp **GUI → BUS → DAO**. DTO là thư viện truyền dữ liệu dùng chung. WinForms có chức năng tải nhân viên và quản lý dự án, công việc, phân công. Màn hình **Chấm công** hỗ trợ quản lý trạng thái và bản ghi chấm công theo bố cục main–sub.
 
 ## Cấu trúc
 
@@ -59,6 +59,9 @@ src/
 database/
   01_CreateDatabase.sql
   02_SeedData.sql
+  03_ProjectManagement.sql
+  04_ProjectManagementSeed.sql
+  05_SalaryInformation.sql
 docs/
   diagrams/                        # Ảnh ERD và file draw.io gốc
   architecture.md
@@ -91,7 +94,7 @@ Tải file và mở bằng draw.io/diagrams.net để xem hoặc chỉnh sửa. 
 ## Chạy ứng dụng
 
 1. Cài .NET 10 SDK, SQL Server và IDE hỗ trợ .NET 10/WinForms.
-2. Dùng SQL Server Management Studio chạy `database/01_CreateDatabase.sql`, rồi `database/02_SeedData.sql` trên database mới. Nếu đã có database thì bỏ qua hai script này. Tiếp tục chạy `database/03_ProjectManagement.sql` để tạo bốn bảng dự án; có thể chạy `database/04_ProjectManagementSeed.sql` nếu muốn thêm dữ liệu minh họa. Script 03 và 04 có thể chạy lại trên schema được tạo bởi chính các script này.
+2. Dùng SQL Server Management Studio chạy `database/01_CreateDatabase.sql`, rồi `database/02_SeedData.sql` trên database mới. Nếu đã có database thì bỏ qua hai script này. Tiếp tục chạy `database/03_ProjectManagement.sql` để tạo bốn bảng dự án, rồi chạy `database/05_SalaryInformation.sql` để tạo tám bảng chấm công, lương, phụ cấp và khen thưởng. Có thể chạy `database/04_ProjectManagementSeed.sql` nếu muốn dữ liệu dự án mẫu. Nếu `Attendance` hoặc `Payroll` bản khung cũ đã có dữ liệu, script 05 dừng và giữ dữ liệu để xử lý chuyển đổi riêng.
 3. Mở PowerShell tại thư mục solution:
 
 ```powershell
@@ -114,6 +117,10 @@ dotnet run --project tests/ProjectManagement.Tests
 ```
 
 Hướng dẫn đọc code và kiểm thử SQL nằm trong [docs/project-management.md](docs/project-management.md).
+
+## Chấm công
+
+Sau khi chạy script `05_SalaryInformation.sql`, mở WinForms và bấm **Chấm công**. Tạo trạng thái ở danh sách trên, chọn trạng thái để xem các bản ghi ở danh sách dưới. Bấm **…** để tìm và chọn nhân viên trước khi lưu chấm công. Mã bản ghi do SQL Server sinh.
 
 ## Chạy web và API
 

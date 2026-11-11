@@ -7,10 +7,10 @@ using DAO.Infrastructure;
 using DTO.HumanResources.Employees;
 namespace DAO.HumanResources.Employees;
 public sealed class EmployeeDao(MyConnection connectionFactory) : IEmployeeDao {
-    public async Task<List<EmployeeDto>> GetAllAsync() {
+    public async Task<List<EmployeeDto>> GetAllAsync(CancellationToken cancellation_token = default) {
         var items = new List<EmployeeDto>();
         using var connection = connectionFactory.CreateConnection();
-        await connection.OpenAsync();
+        await connection.OpenAsync(cancellation_token);
         using var command = connection.CreateCommand();
         command.CommandText = @"SELECT e.Id, e.EmployeeCode, e.FullName, e.Email, e.DepartmentId, e.PositionId, e.HireDate, e.IsActive,
                                        ISNULL(d.Name, N'') AS DepartmentName, ISNULL(p.Name, N'') AS PositionName
@@ -18,8 +18,8 @@ public sealed class EmployeeDao(MyConnection connectionFactory) : IEmployeeDao {
                                 LEFT JOIN dbo.Departments d ON d.Id = e.DepartmentId
                                 LEFT JOIN dbo.Positions p ON p.Id = e.PositionId
                                 ORDER BY e.Id DESC;";
-        using var reader = await command.ExecuteReaderAsync();
-        while (await reader.ReadAsync()) {
+        using var reader = await command.ExecuteReaderAsync(cancellation_token);
+        while (await reader.ReadAsync(cancellation_token)) {
             items.Add(new EmployeeDto {
                 Id = reader.GetInt32(reader.GetOrdinal("Id")),
                 EmployeeCode = reader.GetString(reader.GetOrdinal("EmployeeCode")),

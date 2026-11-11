@@ -1,5 +1,7 @@
 using BUS.HumanResources.Employees;
-using DAO.HumanResources.Employees;
+using BUS.HumanResources;
+using BUS.SalaryInformation.Attendance;
+using DAO.SalaryInformation.Attendance;
 using DAO.Infrastructure;
 using BUS.ProjectManagement;
 using BUS.ProjectManagement.Projects;
@@ -14,8 +16,11 @@ using DAO.ProjectManagement.Assignments;
 namespace BUS;
 public static class ServiceFactory
 {
-    public static EmployeeService CreateEmployeeService(string connectionString)
-        => new(new EmployeeRepository(new MyConnection(connectionString)));
+    public static EmployeeService CreateEmployeeService(string connection_string)
+        => HumanResourcesServiceFactory.CreateEmployeeService(connection_string);
+
+    public static AttendanceService CreateAttendanceService(string connection_string)
+        => new(new AttendanceDao(new MyConnection(connection_string)));
 
     // GUI chỉ gọi factory; việc tạo DAO được giữ trong BUS.
     public static ProjectService CreateProjectService(string connectionString)

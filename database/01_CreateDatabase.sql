@@ -32,22 +32,4 @@ CREATE TABLE dbo.Contracts (
     BaseSalary DECIMAL(18,2) NOT NULL CHECK (BaseSalary >= 0),
     CHECK (EndDate IS NULL OR EndDate >= StartDate)
 );
-CREATE TABLE dbo.Attendance (
-    Id INT IDENTITY PRIMARY KEY,
-    EmployeeId INT NOT NULL REFERENCES dbo.Employees(Id),
-    WorkDate DATE NOT NULL,
-    WorkHours DECIMAL(4,2) NOT NULL CHECK (WorkHours BETWEEN 0 AND 24),
-    UNIQUE (EmployeeId, WorkDate)
-);
-CREATE TABLE dbo.Payroll (
-    Id INT IDENTITY PRIMARY KEY,
-    EmployeeId INT NOT NULL REFERENCES dbo.Employees(Id),
-    SalaryMonth INT NOT NULL CHECK (SalaryMonth BETWEEN 1 AND 12),
-    SalaryYear INT NOT NULL CHECK (SalaryYear >= 2000),
-    BaseSalary DECIMAL(18,2) NOT NULL CHECK (BaseSalary >= 0),
-    Allowance DECIMAL(18,2) NOT NULL DEFAULT 0 CHECK (Allowance >= 0),
-    Deduction DECIMAL(18,2) NOT NULL DEFAULT 0 CHECK (Deduction >= 0),
-    NetSalary AS (BaseSalary + Allowance - Deduction),
-    UNIQUE (EmployeeId, SalaryMonth, SalaryYear)
-);
 GO

@@ -6,7 +6,8 @@ using DAO.HumanResources.Employees;
 using DTO.HumanResources.Employees;
 namespace BUS.HumanResources.Employees;
 public sealed class EmployeeService(IEmployeeDao dao) {
-    public Task<List<EmployeeDto>> GetAllAsync() => dao.GetAllAsync();
+    public Task<List<EmployeeDto>> GetAllAsync(CancellationToken cancellation_token = default)
+        => dao.GetAllAsync(cancellation_token);
     public async Task<int> SaveAsync(EmployeeDto item) {
         ArgumentNullException.ThrowIfNull(item);
         if (item.Id < 0) throw new ArgumentException("Id không hợp lệ.");
