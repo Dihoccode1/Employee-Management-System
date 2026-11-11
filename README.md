@@ -62,6 +62,7 @@ database/
   03_ProjectManagement.sql
   04_ProjectManagementSeed.sql
   05_SalaryInformation.sql
+  06_DemoSeed.sql
 docs/
   diagrams/                        # Ảnh ERD và file draw.io gốc
   architecture.md
@@ -121,6 +122,8 @@ Hướng dẫn đọc code và kiểm thử SQL nằm trong [docs/project-manage
 ## Chấm công
 
 Sau khi chạy script `05_SalaryInformation.sql`, mở WinForms và bấm **Chấm công**. Tạo trạng thái ở danh sách trên, chọn trạng thái để xem các bản ghi ở danh sách dưới. Bấm **…** để tìm và chọn nhân viên trước khi lưu chấm công. Mã bản ghi do SQL Server sinh.
+
+Để có dữ liệu thử, chạy `database/06_DemoSeed.sql` sau script `03`. Script bổ sung đến tổng 55 nhân viên và 12 dự án, giữ các bản ghi đã có.
 
 ## Chạy web và API
 
