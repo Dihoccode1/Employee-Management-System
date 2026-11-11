@@ -11,9 +11,8 @@ namespace GUI.Forms.HumanResources.Contracts;
 public sealed class ContractForm : Form {
     private readonly ContractService _service;
     private ArrayList _cachedItems = new();
-    private int _selectedId;
     private readonly TextBox _txtCode = new() { Location = new Point(140, 20), Width = 180 };
-    private readonly TextBox _txtEmpId = new() { Location = new Point(140, 55), Width = 180 };
+    private readonly TextBox _txtEmpCode = new() { Location = new Point(140, 55), Width = 180 };
     private readonly TextBox _txtSalary = new() { Location = new Point(140, 90), Width = 180 };
     private readonly DateTimePicker _dtpStart = new() { Location = new Point(450, 20), Width = 140 };
     private readonly DateTimePicker _dtpEnd = new() { Location = new Point(450, 55), Width = 140, ShowCheckBox = true };
@@ -24,8 +23,8 @@ public sealed class ContractForm : Form {
         _service = HumanResourcesServiceFactory.CreateContractService(c);
         Text = "Quản lý Hợp đồng"; Size = new Size(840, 510);
         Controls.AddRange(new Control[] {
-            new Label { Text = "Mã HĐ:", Location = new Point(20, 23), AutoSize = true }, _txtCode,
-            new Label { Text = "ID NV:", Location = new Point(20, 58), AutoSize = true }, _txtEmpId,
+            new Label { Text = "Mã HĐ (PK):", Location = new Point(20, 23), AutoSize = true }, _txtCode,
+            new Label { Text = "Mã NV:", Location = new Point(20, 58), AutoSize = true }, _txtEmpCode,
             new Label { Text = "Lương CB:", Location = new Point(20, 93), AutoSize = true }, _txtSalary,
             new Label { Text = "Ngày bắt đầu:", Location = new Point(340, 23), AutoSize = true }, _dtpStart,
             new Label { Text = "Ngày kết thúc:", Location = new Point(340, 58), AutoSize = true }, _dtpEnd,
@@ -38,18 +37,17 @@ public sealed class ContractForm : Form {
         btnLoad.Click += async (_, _) => await LoadDataAsync();
         btnSave.Click += async (_, _) => {
             try {
-                int.TryParse(_txtEmpId.Text.Trim(), out int eId);
                 decimal.TryParse(_txtSalary.Text.Trim(), out decimal sal);
                 await _service.SaveAsync(new ContractDto {
-                    Id = _selectedId, EmployeeId = eId, ContractCode = _txtCode.Text, StartDate = _dtpStart.Value.Date,
+                    ContractCode = _txtCode.Text, EmployeeCode = _txtEmpCode.Text, StartDate = _dtpStart.Value.Date,
                     EndDate = _dtpEnd.Checked ? _dtpEnd.Value.Date : null, BaseSalary = sal
                 });
-                _selectedId = 0; _txtCode.Clear(); _txtEmpId.Clear(); _txtSalary.Clear();
+                _txtCode.Clear(); _txtEmpCode.Clear(); _txtSalary.Clear();
                 await LoadDataAsync();
             } catch (Exception ex) { MessageBox.Show(ex.Message); }
         };
         btnDel.Click += async (_, _) => {
-            try { await _service.DeleteAsync(_selectedId); _selectedId = 0; await LoadDataAsync(); }
+            try { await _service.DeleteAsync(_txtCode.Text); _txtCode.Clear(); await LoadDataAsync(); }
             catch (Exception ex) { MessageBox.Show(ex.Message); }
         };
         btnSearch.Click += (_, _) => {
@@ -59,7 +57,7 @@ public sealed class ContractForm : Form {
         };
         _grid.CellClick += (_, e) => {
             if (e.RowIndex >= 0 && _grid.Rows[e.RowIndex].DataBoundItem is ContractDto d) {
-                _selectedId = d.Id; _txtCode.Text = d.ContractCode; _txtEmpId.Text = d.EmployeeId.ToString(); _txtSalary.Text = d.BaseSalary.ToString("0.##");
+                _txtCode.Text = d.ContractCode; _txtEmpCode.Text = d.EmployeeCode; _txtSalary.Text = d.BaseSalary.ToString("0.##");
                 _dtpStart.Value = d.StartDate; if (d.EndDate.HasValue) { _dtpEnd.Checked = true; _dtpEnd.Value = d.EndDate.Value; } else _dtpEnd.Checked = false;
             }
         };

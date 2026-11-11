@@ -6,22 +6,23 @@ using DAO.HumanResources.Employees;
 using DTO.HumanResources.Employees;
 namespace BUS.HumanResources.Employees;
 public sealed class EmployeeService(IEmployeeDao dao) {
-    public Task<List<EmployeeDto>> GetAllAsync(CancellationToken cancellation_token = default)
-        => dao.GetAllAsync(cancellation_token);
-    public async Task<int> SaveAsync(EmployeeDto item) {
+    public Task<List<EmployeeDto>> GetAllAsync() => dao.GetAllAsync();
+    public async Task<string> SaveAsync(EmployeeDto item) {
         ArgumentNullException.ThrowIfNull(item);
-        if (item.Id < 0) throw new ArgumentException("Id không hợp lệ.");
         item.EmployeeCode = item.EmployeeCode?.Trim() ?? string.Empty;
         item.FullName = item.FullName?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(item.EmployeeCode) || item.EmployeeCode.Length > 20) throw new ArgumentException("Mã nhân viên bắt buộc.");
-        if (string.IsNullOrWhiteSpace(item.FullName) || item.FullName.Length > 150) throw new ArgumentException("Họ tên bắt buộc.");
-        if (item.Id == 0) return await dao.InsertAsync(item);
-        await dao.UpdateAsync(item);
-        return item.Id;
+        item.Email = string.IsNullOrWhiteSpace(item.Email) ? null : item.Email.Trim();
+        item.DepartmentCode = item.DepartmentCode?.Trim() ?? string.Empty;
+        item.PositionCode = item.PositionCode?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(item.EmployeeCode) || item.EmployeeCode.Length > 20) throw new ArgumentException("Mã nhân viên bắt buộc và tối đa 20 ký tự.");
+        if (string.IsNullOrWhiteSpace(item.FullName) || item.FullName.Length > 150) throw new ArgumentException("Họ tên bắt buộc và tối đa 150 ký tự.");
+        if (await dao.ExistsAsync(item.EmployeeCode)) await dao.UpdateAsync(item);
+        else await dao.InsertAsync(item);
+        return item.EmployeeCode;
     }
-    public Task DeleteAsync(int id) {
-        if (id <= 0) throw new ArgumentException("Id không hợp lệ.");
-        return dao.DeleteAsync(id);
+    public Task DeleteAsync(string employeeCode) {
+        if (string.IsNullOrWhiteSpace(employeeCode)) throw new ArgumentException("Vui lòng chọn mã nhân viên cần xóa.");
+        return dao.DeleteAsync(employeeCode.Trim());
     }
     public ArrayList Search(ArrayList source, string? term) {
         var result = new ArrayList();

@@ -12,55 +12,67 @@ public sealed class ContractDao(MyConnection connectionFactory) : IContractDao {
         using var connection = connectionFactory.CreateConnection();
         await connection.OpenAsync();
         using var command = connection.CreateCommand();
-        command.CommandText = @"SELECT c.Id, c.EmployeeId, c.ContractCode, c.StartDate, c.EndDate, c.BaseSalary, e.FullName AS EmployeeName
-                                FROM dbo.Contracts c JOIN dbo.Employees e ON e.Id = c.EmployeeId ORDER BY c.Id DESC;";
+        command.CommandText = @"SELECT c.ContractCode, e.EmployeeCode, e.FullName AS EmployeeName, c.StartDate, c.EndDate, c.BaseSalary
+                                FROM dbo.Contracts c JOIN dbo.Employees e ON e.Id = c.EmployeeId ORDER BY c.ContractCode ASC;";
         using var reader = await command.ExecuteReaderAsync();
         while (await reader.ReadAsync()) {
             items.Add(new ContractDto {
-                Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                EmployeeId = reader.GetInt32(reader.GetOrdinal("EmployeeId")),
                 ContractCode = reader.GetString(reader.GetOrdinal("ContractCode")),
+                EmployeeCode = reader.GetString(reader.GetOrdinal("EmployeeCode")),
+                EmployeeName = reader.GetString(reader.GetOrdinal("EmployeeName")),
                 StartDate = reader.GetDateTime(reader.GetOrdinal("StartDate")),
                 EndDate = reader.IsDBNull(reader.GetOrdinal("EndDate")) ? null : reader.GetDateTime(reader.GetOrdinal("EndDate")),
-                BaseSalary = reader.GetDecimal(reader.GetOrdinal("BaseSalary")),
-                EmployeeName = reader.GetString(reader.GetOrdinal("EmployeeName"))
+                BaseSalary = reader.GetDecimal(reader.GetOrdinal("BaseSalary"))
             });
         }
         return items;
     }
-    public async Task<int> InsertAsync(ContractDto item) {
+    public async Task<bool> ExistsAsync(string contractCode) {
         using var connection = connectionFactory.CreateConnection();
         await connection.OpenAsync();
         using var command = connection.CreateCommand();
-        command.CommandText = @"INSERT INTO dbo.Contracts (EmployeeId, ContractCode, StartDate, EndDate, BaseSalary)
-                                OUTPUT INSERTED.Id VALUES (@EmployeeId, @ContractCode, @StartDate, @EndDate, @BaseSalary);";
+        command.CommandText = "SELECT COUNT(1) FROM dbo.Contracts WHERE ContractCode = @ContractCode;";
+        command.Parameters.Add("@ContractCode", SqlDbType.VarChar, 30).Value = contractCode;
+        return Convert.ToInt32(await command.ExecuteScalarAsync()) > 0;
+    }
+    public async Task InsertAsync(ContractDto item) {
+        using var connection = connectionFactory.CreateConnection();
+        await connection.OpenAsync();
+        using var command = connection.CreateCommand();
+        command.CommandText = @"
+            DECLARE @EmpId INT = (SELECT TOP 1 Id FROM dbo.Employees WHERE EmployeeCode = @EmployeeCode OR TRY_CAST(@EmployeeCode AS INT) = Id);
+            IF @EmpId IS NULL THROW 50001, N'Mã nhân viên không tồn tại.', 1;
+            INSERT INTO dbo.Contracts (EmployeeId, ContractCode, StartDate, EndDate, BaseSalary)
+            VALUES (@EmpId, @ContractCode, @StartDate, @EndDate, @BaseSalary);";
         AddParameters(command, item);
-        try { return Convert.ToInt32(await command.ExecuteScalarAsync()); }
+        try { await command.ExecuteNonQueryAsync(); }
         catch (SqlException ex) { throw HrSqlParameterHelper.CreateWriteException(ex); }
     }
     public async Task UpdateAsync(ContractDto item) {
         using var connection = connectionFactory.CreateConnection();
         await connection.OpenAsync();
         using var command = connection.CreateCommand();
-        command.CommandText = @"UPDATE dbo.Contracts SET EmployeeId = @EmployeeId, ContractCode = @ContractCode,
-                                StartDate = @StartDate, EndDate = @EndDate, BaseSalary = @BaseSalary WHERE Id = @Id;";
-        command.Parameters.Add("@Id", SqlDbType.Int).Value = item.Id;
+        command.CommandText = @"
+            DECLARE @EmpId INT = (SELECT TOP 1 Id FROM dbo.Employees WHERE EmployeeCode = @EmployeeCode OR TRY_CAST(@EmployeeCode AS INT) = Id);
+            IF @EmpId IS NULL THROW 50001, N'Mã nhân viên không tồn tại.', 1;
+            UPDATE dbo.Contracts SET EmployeeId = @EmpId, StartDate = @StartDate, EndDate = @EndDate, BaseSalary = @BaseSalary
+            WHERE ContractCode = @ContractCode;";
         AddParameters(command, item);
-        try { if (await command.ExecuteNonQueryAsync() == 0) throw new InvalidOperationException("Bản ghi không tồn tại."); }
+        try { if (await command.ExecuteNonQueryAsync() == 0) throw new InvalidOperationException("Mã hợp đồng không tồn tại."); }
         catch (SqlException ex) { throw HrSqlParameterHelper.CreateWriteException(ex); }
     }
-    public async Task DeleteAsync(int id) {
+    public async Task DeleteAsync(string contractCode) {
         using var connection = connectionFactory.CreateConnection();
         await connection.OpenAsync();
         using var command = connection.CreateCommand();
-        command.CommandText = "DELETE FROM dbo.Contracts WHERE Id = @Id;";
-        command.Parameters.Add("@Id", SqlDbType.Int).Value = id;
-        try { if (await command.ExecuteNonQueryAsync() == 0) throw new InvalidOperationException("Bản ghi không tồn tại."); }
+        command.CommandText = "DELETE FROM dbo.Contracts WHERE ContractCode = @ContractCode;";
+        command.Parameters.Add("@ContractCode", SqlDbType.VarChar, 30).Value = contractCode;
+        try { if (await command.ExecuteNonQueryAsync() == 0) throw new InvalidOperationException("Mã hợp đồng không tồn tại."); }
         catch (SqlException ex) when (ex.Number == 547) { throw new InvalidOperationException("Không thể xóa vì còn dữ liệu liên quan.", ex); }
     }
     private static void AddParameters(SqlCommand command, ContractDto item) {
-        command.Parameters.Add("@EmployeeId", SqlDbType.Int).Value = item.EmployeeId;
         command.Parameters.Add("@ContractCode", SqlDbType.VarChar, 30).Value = item.ContractCode;
+        command.Parameters.Add("@EmployeeCode", SqlDbType.VarChar, 20).Value = item.EmployeeCode;
         command.Parameters.Add("@StartDate", SqlDbType.Date).Value = item.StartDate.Date;
         command.Parameters.Add("@EndDate", SqlDbType.Date).Value = (object?)item.EndDate?.Date ?? DBNull.Value;
         HrSqlParameterHelper.AddDecimal(command, "@BaseSalary", item.BaseSalary, 18, 2);

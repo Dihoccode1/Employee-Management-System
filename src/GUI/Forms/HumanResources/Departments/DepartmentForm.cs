@@ -11,7 +11,6 @@ namespace GUI.Forms.HumanResources.Departments;
 public sealed class DepartmentForm : Form {
     private readonly DepartmentService _service;
     private ArrayList _cachedItems = new();
-    private int _selectedId;
     private readonly TextBox _txtCode = new() { Location = new Point(140, 20), Width = 200 };
     private readonly TextBox _txtName = new() { Location = new Point(140, 55), Width = 200 };
     private readonly TextBox _txtSearch = new() { Location = new Point(140, 90), Width = 200 };
@@ -21,7 +20,7 @@ public sealed class DepartmentForm : Form {
         _service = HumanResourcesServiceFactory.CreateDepartmentService(c);
         Text = "Quản lý Phòng ban"; Size = new Size(700, 500);
         Controls.AddRange(new Control[] {
-            new Label { Text = "Mã PB:", Location = new Point(20, 23), AutoSize = true }, _txtCode,
+            new Label { Text = "Mã PB (PK):", Location = new Point(20, 23), AutoSize = true }, _txtCode,
             new Label { Text = "Tên PB:", Location = new Point(20, 58), AutoSize = true }, _txtName,
             new Label { Text = "Tìm kiếm:", Location = new Point(20, 93), AutoSize = true }, _txtSearch, _grid
         });
@@ -31,11 +30,11 @@ public sealed class DepartmentForm : Form {
         var btnSearch = new Button { Text = "Tìm", Location = new Point(370, 88), Width = 80 };
         btnLoad.Click += async (_, _) => await LoadDataAsync();
         btnSave.Click += async (_, _) => {
-            try { await _service.SaveAsync(new DepartmentDto { Id = _selectedId, Code = _txtCode.Text, Name = _txtName.Text }); _selectedId = 0; _txtCode.Clear(); _txtName.Clear(); await LoadDataAsync(); }
+            try { await _service.SaveAsync(new DepartmentDto { Code = _txtCode.Text, Name = _txtName.Text }); _txtCode.Clear(); _txtName.Clear(); await LoadDataAsync(); }
             catch (Exception ex) { MessageBox.Show(ex.Message); }
         };
         btnDel.Click += async (_, _) => {
-            try { await _service.DeleteAsync(_selectedId); _selectedId = 0; _txtCode.Clear(); _txtName.Clear(); await LoadDataAsync(); }
+            try { await _service.DeleteAsync(_txtCode.Text); _txtCode.Clear(); _txtName.Clear(); await LoadDataAsync(); }
             catch (Exception ex) { MessageBox.Show(ex.Message); }
         };
         btnSearch.Click += (_, _) => {
@@ -44,7 +43,7 @@ public sealed class DepartmentForm : Form {
             _grid.DataSource = l;
         };
         _grid.CellClick += (_, e) => {
-            if (e.RowIndex >= 0 && _grid.Rows[e.RowIndex].DataBoundItem is DepartmentDto d) { _selectedId = d.Id; _txtCode.Text = d.Code; _txtName.Text = d.Name; }
+            if (e.RowIndex >= 0 && _grid.Rows[e.RowIndex].DataBoundItem is DepartmentDto d) { _txtCode.Text = d.Code; _txtName.Text = d.Name; }
         };
         Controls.AddRange(new Control[] { btnLoad, btnSave, btnDel, btnSearch });
         Shown += async (_, _) => await LoadDataAsync();
