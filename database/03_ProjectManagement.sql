@@ -69,6 +69,7 @@ BEGIN
         StartDate DATE NOT NULL,
         Deadline DATE NOT NULL,
         CompletedDate DATE NULL,
+        ContributionScore DECIMAL(5,2) NOT NULL CONSTRAINT DF_Assignments_ContributionScore DEFAULT (0) CHECK (ContributionScore BETWEEN 0 AND 100),
         CompletionPercentage DECIMAL(5,2) NOT NULL CHECK (CompletionPercentage BETWEEN 0 AND 100),
         Status NVARCHAR(50) NOT NULL CHECK (LEN(LTRIM(RTRIM(Status))) > 0),
         Notes NVARCHAR(2000) NOT NULL,
@@ -80,7 +81,10 @@ BEGIN
 END;
 
 -- Không dùng ON DELETE CASCADE: còn dữ liệu con thì SQL Server chặn xóa.
--- Tiến độ, trạng thái, phụ cấp và thưởng đều do người dùng nhập.
--- Không có cột điểm đánh giá đóng góp, không tự cập nhật bảng lương.
+-- Tiến độ, trạng thái, phụ cấp, thưởng và điểm đánh giá đóng góp do người dùng nhập; không tự cập nhật bảng lương.
+IF OBJECT_ID(N'dbo.Assignments', N'U') IS NOT NULL AND COL_LENGTH(N'dbo.Assignments', N'ContributionScore') IS NULL
+    ALTER TABLE dbo.Assignments ADD ContributionScore DECIMAL(5,2) NOT NULL
+        CONSTRAINT DF_Assignments_ContributionScore DEFAULT (0)
+        CONSTRAINT CK_Assignments_ContributionScore CHECK (ContributionScore BETWEEN 0 AND 100);
 COMMIT TRANSACTION;
 GO

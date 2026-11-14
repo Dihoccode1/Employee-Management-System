@@ -31,7 +31,9 @@ public sealed class ProjectDao : IProjectDao
                    p.DepartmentId,
                    p.ManagerId,
                    p.Status,
+                   d.Code AS DepartmentCode,
                    d.Name AS DepartmentName,
+                   e.EmployeeCode AS ManagerCode,
                    e.FullName AS ManagerName
             FROM dbo.Projects p
             JOIN dbo.Departments d ON d.Id = p.DepartmentId
@@ -53,7 +55,9 @@ public sealed class ProjectDao : IProjectDao
                 DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
                 ManagerId = reader.GetInt32(reader.GetOrdinal("ManagerId")),
                 Status = reader.GetString(reader.GetOrdinal("Status")),
+                DepartmentCode = reader.GetString(reader.GetOrdinal("DepartmentCode")),
                 DepartmentName = reader.GetString(reader.GetOrdinal("DepartmentName")),
+                ManagerCode = reader.GetString(reader.GetOrdinal("ManagerCode")),
                 ManagerName = reader.GetString(reader.GetOrdinal("ManagerName")),
             });
         }

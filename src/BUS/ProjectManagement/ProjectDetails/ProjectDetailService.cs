@@ -56,4 +56,28 @@ public sealed class ProjectDetailService
         }
         return result;
     }
+
+    /// <summary>Lọc các chi tiết thuộc một dự án trên ArrayList (phục vụ màn hình Main–Sub).</summary>
+    public List<ProjectDetailDto> SearchByProject(ArrayList source, int project_id, string? keyword = null)
+    {
+        var result = new List<ProjectDetailDto>();
+        if (project_id <= 0)
+            return result;
+
+        string trimmed_keyword = keyword?.Trim() ?? string.Empty;
+        foreach (object? obj in source)
+        {
+            if (obj is not ProjectDetailDto item || item.ProjectId != project_id)
+                continue;
+
+            if (string.IsNullOrEmpty(trimmed_keyword) ||
+                item.Id.ToString().Contains(trimmed_keyword, StringComparison.OrdinalIgnoreCase) ||
+                item.Status.Contains(trimmed_keyword, StringComparison.OrdinalIgnoreCase) ||
+                item.ProjectName.Contains(trimmed_keyword, StringComparison.OrdinalIgnoreCase))
+            {
+                result.Add(item);
+            }
+        }
+        return result;
+    }
 }

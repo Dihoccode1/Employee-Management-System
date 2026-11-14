@@ -15,7 +15,9 @@ public sealed class ProjectDto
     public int ManagerId { get; set; }
     public string Status { get; set; } = "";
 
-    // Các tên này chỉ dùng để hiển thị, không ghi vào bảng.
+    // Các mã/tên này dùng để đồng bộ tra cứu và hiển thị, không ghi trực tiếp vào bảng Projects.
+    public string DepartmentCode { get; set; } = "";
     public string DepartmentName { get; set; } = "";
+    public string ManagerCode { get; set; } = "";
     public string ManagerName { get; set; } = "";
 }

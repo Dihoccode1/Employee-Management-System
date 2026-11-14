@@ -19,6 +19,7 @@ public sealed class AssignmentDao : IAssignmentDao
         var items = new List<AssignmentDto>();
         using var connection = _connectionFactory.CreateConnection();
         await connection.OpenAsync();
+        await EnsureContributionScoreColumnAsync(connection);
         using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT a.Id,
@@ -29,9 +30,11 @@ public sealed class AssignmentDao : IAssignmentDao
                    a.Deadline,
                    a.CompletedDate,
                    a.CompletionPercentage,
+                   a.ContributionScore,
                    a.Status,
                    a.Notes,
                    t.Name AS TaskName,
+                   e.EmployeeCode AS EmployeeCode,
                    e.FullName AS EmployeeName,
                    p.Name AS ProjectName
             FROM dbo.Assignments a
@@ -54,9 +57,11 @@ public sealed class AssignmentDao : IAssignmentDao
                 Deadline = reader.GetDateTime(reader.GetOrdinal("Deadline")),
                 CompletedDate = reader.IsDBNull(reader.GetOrdinal("CompletedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("CompletedDate")),
                 CompletionPercentage = reader.GetDecimal(reader.GetOrdinal("CompletionPercentage")),
+                ContributionScore = reader.GetDecimal(reader.GetOrdinal("ContributionScore")),
                 Status = reader.GetString(reader.GetOrdinal("Status")),
                 Notes = reader.GetString(reader.GetOrdinal("Notes")),
                 TaskName = reader.GetString(reader.GetOrdinal("TaskName")),
+                EmployeeCode = reader.GetString(reader.GetOrdinal("EmployeeCode")),
                 EmployeeName = reader.GetString(reader.GetOrdinal("EmployeeName")),
                 ProjectName = reader.GetString(reader.GetOrdinal("ProjectName")),
             });
@@ -68,6 +73,7 @@ public sealed class AssignmentDao : IAssignmentDao
     {
         using var connection = _connectionFactory.CreateConnection();
         await connection.OpenAsync();
+        await EnsureContributionScoreColumnAsync(connection);
         using var command = connection.CreateCommand();
         command.CommandText = """
             INSERT INTO dbo.Assignments
@@ -78,6 +84,7 @@ public sealed class AssignmentDao : IAssignmentDao
                  Deadline,
                  CompletedDate,
                  CompletionPercentage,
+                 ContributionScore,
                  Status,
                  Notes)
             OUTPUT INSERTED.Id
@@ -89,6 +96,7 @@ public sealed class AssignmentDao : IAssignmentDao
                  @Deadline,
                  @CompletedDate,
                  @CompletionPercentage,
+                 @ContributionScore,
                  @Status,
                  @Notes);
             """;
@@ -107,6 +115,7 @@ public sealed class AssignmentDao : IAssignmentDao
     {
         using var connection = _connectionFactory.CreateConnection();
         await connection.OpenAsync();
+        await EnsureContributionScoreColumnAsync(connection);
         using var command = connection.CreateCommand();
         command.CommandText = """
             UPDATE dbo.Assignments
@@ -117,6 +126,7 @@ public sealed class AssignmentDao : IAssignmentDao
                 Deadline = @Deadline,
                 CompletedDate = @CompletedDate,
                 CompletionPercentage = @CompletionPercentage,
+                ContributionScore = @ContributionScore,
                 Status = @Status,
                 Notes = @Notes
             WHERE Id = @Id;
@@ -163,7 +173,22 @@ public sealed class AssignmentDao : IAssignmentDao
         command.Parameters.Add("@Deadline", SqlDbType.Date).Value = item.Deadline.Date;
         command.Parameters.Add("@CompletedDate", SqlDbType.Date).Value = (object?)item.CompletedDate?.Date ?? DBNull.Value;
         SqlParameterHelper.AddDecimal(command, "@CompletionPercentage", item.CompletionPercentage, 5);
+        SqlParameterHelper.AddDecimal(command, "@ContributionScore", item.ContributionScore, 5);
         command.Parameters.Add("@Status", SqlDbType.NVarChar, 50).Value = item.Status;
         command.Parameters.Add("@Notes", SqlDbType.NVarChar, 2000).Value = item.Notes;
+    }
+
+    private static async Task EnsureContributionScoreColumnAsync(SqlConnection connection)
+    {
+        // Tự động bổ sung cột ContributionScore nếu CSDL cũ chưa chạy migration mới.
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            IF OBJECT_ID(N'dbo.Assignments', N'U') IS NOT NULL
+               AND COL_LENGTH(N'dbo.Assignments', N'ContributionScore') IS NULL
+                ALTER TABLE dbo.Assignments ADD ContributionScore DECIMAL(5,2) NOT NULL
+                    CONSTRAINT DF_Assignments_ContributionScore DEFAULT (0)
+                    CONSTRAINT CK_Assignments_ContributionScore CHECK (ContributionScore BETWEEN 0 AND 100);
+            """;
+        await command.ExecuteNonQueryAsync();
     }
 }
