@@ -5,13 +5,13 @@ using System.Drawing;
 using System.Windows.Forms;
 using BUS.HumanResources.Positions;
 using DTO.HumanResources.Positions;
+using GUI.Selection;
 
 namespace GUI.Forms.Lookups;
 
 /// <summary>Form tra cứu Chức vụ: lọc trên ArrayList ở BUS và trả kết quả qua biến static dùng một lần.</summary>
-internal sealed class PositionLookupForm : Form
+public sealed class PositionLookupForm : Form
 {
-    private static PositionDto? _selected_position;
     private readonly PositionService _position_service;
     private readonly ArrayList _positions;
     private readonly TextBox _search_box = new() { Dock = DockStyle.Top, PlaceholderText = "Tìm theo mã, tên hoặc mô tả chức vụ..." };
@@ -28,7 +28,7 @@ internal sealed class PositionLookupForm : Form
         _position_service = position_service;
         _positions = new ArrayList(positions);
         // Xóa lựa chọn cũ mỗi lần mở lại form tra cứu.
-        _selected_position = null;
+        LookupSelectionStore.SetPosition(null);
 
         Text = "Tra cứu chức vụ";
         StartPosition = FormStartPosition.CenterParent;
@@ -53,19 +53,14 @@ internal sealed class PositionLookupForm : Form
     }
 
     /// <summary>Form gọi lấy đối tượng chức vụ đã chọn một lần rồi xóa biến static.</summary>
-    public static PositionDto? TakeSelection()
-    {
-        PositionDto? position = _selected_position;
-        _selected_position = null;
-        return position;
-    }
+    public static PositionDto? TakeSelection() => LookupSelectionStore.TakePosition();
 
     private void ConfirmSelection()
     {
         if (_position_list.SelectedItems.Count != 1)
             return;
 
-        _selected_position = (PositionDto)_position_list.SelectedItems[0].Tag!;
+        LookupSelectionStore.SetPosition((PositionDto)_position_list.SelectedItems[0].Tag!);
         DialogResult = DialogResult.OK;
     }
 

@@ -40,6 +40,11 @@ IF COL_LENGTH(N'dbo.Contracts', N'ContractType') IS NULL
 IF COL_LENGTH(N'dbo.Contracts', N'Status') IS NULL
     ALTER TABLE dbo.Contracts ADD Status NVARCHAR(50) NOT NULL CONSTRAINT DF_Contracts_Status DEFAULT (N'Còn hiệu lực');
 
+IF OBJECT_ID(N'dbo.Assignments', N'U') IS NOT NULL AND COL_LENGTH(N'dbo.Assignments', N'ContributionScore') IS NULL
+    ALTER TABLE dbo.Assignments ADD ContributionScore DECIMAL(5,2) NOT NULL
+        CONSTRAINT DF_Assignments_ContributionScore DEFAULT (0)
+        CONSTRAINT CK_Assignments_ContributionScore CHECK (ContributionScore BETWEEN 0 AND 100);
+
 IF OBJECT_ID(N'dbo.SystemParameters', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.SystemParameters (

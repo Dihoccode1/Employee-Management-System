@@ -12,11 +12,13 @@ public sealed class AssignmentDto
     public DateTime Deadline { get; set; }
     public DateTime? CompletedDate { get; set; }
     public decimal CompletionPercentage { get; set; }
+    public decimal ContributionScore { get; set; }
     public string Status { get; set; } = "";
     public string Notes { get; set; } = "";
 
-    // Các tên này chỉ dùng để hiển thị, không ghi vào bảng.
+    // Các mã/tên này dùng để đồng bộ tra cứu và hiển thị, không ghi vào bảng.
     public string TaskName { get; set; } = "";
+    public string EmployeeCode { get; set; } = "";
     public string EmployeeName { get; set; } = "";
     public string ProjectName { get; set; } = "";
 }

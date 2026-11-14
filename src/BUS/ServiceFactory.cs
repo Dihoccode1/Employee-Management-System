@@ -1,4 +1,5 @@
 using BUS.HumanResources;
+using BUS.HumanResources.Departments;
 using BUS.HumanResources.Employees;
 using BUS.ImportExport;
 using BUS.ProjectManagement;
@@ -6,8 +7,10 @@ using BUS.ProjectManagement.Assignments;
 using BUS.ProjectManagement.ProjectDetails;
 using BUS.ProjectManagement.Projects;
 using BUS.ProjectManagement.Tasks;
+using BUS.Reporting;
 using BUS.SalaryInformation.Attendance;
 using BUS.Settings;
+using BUS.Statistics;
 using DAO.Infrastructure;
 using DAO.ProjectManagement;
 using DAO.ProjectManagement.Assignments;
@@ -15,11 +18,16 @@ using DAO.ProjectManagement.ProjectDetails;
 using DAO.ProjectManagement.Projects;
 using DAO.ProjectManagement.Tasks;
 using DAO.SalaryInformation.Attendance;
+using DAO.Settings;
+using DAO.Statistics;
 
 namespace BUS;
 
 public static class ServiceFactory
 {
+    public static DepartmentService CreateDepartmentService(string connection_string)
+        => HumanResourcesServiceFactory.CreateDepartmentService(connection_string);
+
     public static EmployeeService CreateEmployeeService(string connection_string)
         => HumanResourcesServiceFactory.CreateEmployeeService(connection_string);
 
@@ -62,4 +70,13 @@ public static class ServiceFactory
         var dao = new ProjectLookupDao(new MyConnection(connection_string));
         return new ProjectLookupService(dao);
     }
+
+    public static ProjectStatisticsService CreateProjectStatisticsService(string connection_string)
+    {
+        var dao = new ProjectStatisticsDao(new MyConnection(connection_string));
+        return new ProjectStatisticsService(dao);
+    }
+
+    public static ProjectPdfReportService CreateProjectPdfReportService()
+        => new();
 }

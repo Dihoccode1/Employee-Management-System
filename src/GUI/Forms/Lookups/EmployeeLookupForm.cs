@@ -1,12 +1,12 @@
 using System.Collections;
 using BUS.HumanResources.Employees;
 using DTO.HumanResources.Employees;
+using GUI.Selection;
 
 namespace GUI.Forms.Lookups;
 
-internal sealed class EmployeeLookupForm : Form
+public sealed class EmployeeLookupForm : Form
 {
-    private static EmployeeDto? _selected_employee;
     private readonly EmployeeService _employee_service;
     private readonly ArrayList _employees;
     private readonly TextBox _search_box = new() { Dock = DockStyle.Top, PlaceholderText = "Tìm theo mã hoặc họ tên" };
@@ -22,7 +22,8 @@ internal sealed class EmployeeLookupForm : Form
     {
         _employee_service = employee_service;
         _employees = new ArrayList(employees);
-        _selected_employee = null;
+        // Xóa lựa chọn cũ mỗi lần mở lại form tra cứu.
+        LookupSelectionStore.SetEmployee(null);
 
         Text = "Chọn nhân viên";
         StartPosition = FormStartPosition.CenterParent;
@@ -42,20 +43,15 @@ internal sealed class EmployeeLookupForm : Form
         RenderEmployees();
     }
 
-    // Form gọi lấy kết quả một lần. Lần mở tiếp theo không dùng lại lựa chọn cũ.
-    public static EmployeeDto? TakeSelection()
-    {
-        EmployeeDto? employee = _selected_employee;
-        _selected_employee = null;
-        return employee;
-    }
+    // Form gọi lấy kết quả một lần qua LookupSelectionStore (static). Lần mở tiếp theo không dùng lại lựa chọn cũ.
+    public static EmployeeDto? TakeSelection() => LookupSelectionStore.TakeEmployee();
 
     private void ConfirmSelection()
     {
         if (_employee_list.SelectedItems.Count != 1)
             return;
 
-        _selected_employee = (EmployeeDto)_employee_list.SelectedItems[0].Tag!;
+        LookupSelectionStore.SetEmployee((EmployeeDto)_employee_list.SelectedItems[0].Tag!);
         DialogResult = DialogResult.OK;
     }
 

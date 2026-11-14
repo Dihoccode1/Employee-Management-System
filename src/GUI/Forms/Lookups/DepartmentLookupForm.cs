@@ -5,13 +5,13 @@ using System.Drawing;
 using System.Windows.Forms;
 using BUS.HumanResources.Departments;
 using DTO.HumanResources.Departments;
+using GUI.Selection;
 
 namespace GUI.Forms.Lookups;
 
 /// <summary>Form tra cứu Phòng ban: lọc trên ArrayList ở BUS và trả kết quả qua biến static dùng một lần.</summary>
-internal sealed class DepartmentLookupForm : Form
+public sealed class DepartmentLookupForm : Form
 {
-    private static DepartmentDto? _selected_department;
     private readonly DepartmentService _department_service;
     private readonly ArrayList _departments;
     private readonly TextBox _search_box = new() { Dock = DockStyle.Top, PlaceholderText = "Tìm theo mã, tên hoặc mô tả phòng ban..." };
@@ -28,7 +28,7 @@ internal sealed class DepartmentLookupForm : Form
         _department_service = department_service;
         _departments = new ArrayList(departments);
         // Xóa lựa chọn cũ ngay khi mở lại form tra cứu để tránh dùng nhầm kết quả trước đó.
-        _selected_department = null;
+        LookupSelectionStore.SetDepartment(null);
 
         Text = "Tra cứu phòng ban";
         StartPosition = FormStartPosition.CenterParent;
@@ -52,19 +52,14 @@ internal sealed class DepartmentLookupForm : Form
     }
 
     /// <summary>Form gọi lấy đối tượng phòng ban đã chọn một lần rồi xóa biến static.</summary>
-    public static DepartmentDto? TakeSelection()
-    {
-        DepartmentDto? department = _selected_department;
-        _selected_department = null;
-        return department;
-    }
+    public static DepartmentDto? TakeSelection() => LookupSelectionStore.TakeDepartment();
 
     private void ConfirmSelection()
     {
         if (_department_list.SelectedItems.Count != 1)
             return;
 
-        _selected_department = (DepartmentDto)_department_list.SelectedItems[0].Tag!;
+        LookupSelectionStore.SetDepartment((DepartmentDto)_department_list.SelectedItems[0].Tag!);
         DialogResult = DialogResult.OK;
     }
 

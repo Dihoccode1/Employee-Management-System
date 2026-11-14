@@ -27,6 +27,7 @@ public sealed class AssignmentService
         ProjectValidation.PositiveId(item.EmployeeId, "nhân viên");
         item.Notes = ProjectValidation.OptionalText(item.Notes, "ghi chú", 2000);
         ProjectValidation.Number(item.CompletionPercentage, "Tiến độ", 100);
+        ProjectValidation.Number(item.ContributionScore, "Điểm đóng góp", 100);
         ProjectValidation.Dates(item.StartDate, item.Deadline, item.CompletedDate);
 
         // Mã bằng 0 nghĩa là thêm mới; mã lớn hơn 0 nghĩa là cập nhật.

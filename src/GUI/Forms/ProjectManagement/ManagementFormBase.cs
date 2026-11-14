@@ -7,8 +7,10 @@ public abstract class ManagementFormBase : Form
 {
     protected readonly DataGridView Grid = new();
     protected readonly TextBox SearchBox = new();
+    protected readonly Panel ExtraToolbarPanel = new() { Dock = DockStyle.Fill, Visible = false };
     protected int SelectedId;
     private readonly TableLayoutPanel _editor = new();
+    private readonly TableLayoutPanel _layout = new() { Dock = DockStyle.Fill, RowCount = 5, ColumnCount = 1 };
     private readonly FlowLayoutPanel _toolbar = new();
     private readonly Label _recordLabel = new();
     private readonly Label _messageLabel = new();
@@ -23,11 +25,11 @@ public abstract class ManagementFormBase : Form
         AutoScaleMode = AutoScaleMode.Font;
         Font = new Font("Segoe UI", 10);
 
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 4, ColumnCount = 1 };
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 300));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+        _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+        _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 0));
+        _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 300));
+        _layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
         _toolbar.Dock = DockStyle.Fill;
         _toolbar.Padding = new Padding(8);
         _toolbar.WrapContents = false;
@@ -96,13 +98,22 @@ public abstract class ManagementFormBase : Form
         };
         _messageLabel.Dock = DockStyle.Fill;
         _messageLabel.Padding = new Padding(8, 4, 0, 0);
-        layout.Controls.Add(_toolbar, 0, 0);
-        layout.Controls.Add(_editor, 0, 1);
-        layout.Controls.Add(Grid, 0, 2);
-        layout.Controls.Add(_messageLabel, 0, 3);
-        Controls.Add(layout);
+        _layout.Controls.Add(_toolbar, 0, 0);
+        _layout.Controls.Add(ExtraToolbarPanel, 0, 1);
+        _layout.Controls.Add(_editor, 0, 2);
+        _layout.Controls.Add(Grid, 0, 3);
+        _layout.Controls.Add(_messageLabel, 0, 4);
+        Controls.Add(_layout);
         Shown += async (_, _) => await RunAsync(ReloadAsync);
     }
+
+    protected void SetExtraToolbarHeight(int height)
+    {
+        ExtraToolbarPanel.Visible = height > 0;
+        _layout.RowStyles[1] = new RowStyle(SizeType.Absolute, Math.Max(0, height));
+    }
+
+    protected void SetStatusMessage(string message) => _messageLabel.Text = message;
 
     private void AddButton(string text, Func<Task> action)
     {
@@ -182,6 +193,35 @@ public abstract class ManagementFormBase : Form
         input.Dock = DockStyle.Fill;
         input.Margin = new Padding(3, 6, 12, 6);
         _editor.Controls.Add(input, column + 1, row);
+    }
+
+    /// <summary>Đặt ô nhập liệu kèm nút "..." ngay bên cạnh để mở form tra cứu.</summary>
+    protected void AddFieldWithLookup(string label, Control input, EventHandler on_lookup_click)
+    {
+        var container = new TableLayoutPanel
+        {
+            ColumnCount = 2,
+            RowCount = 1,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        container.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        container.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 36));
+        container.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        input.Dock = DockStyle.Fill;
+        input.Margin = Padding.Empty;
+        var lookup_button = new Button
+        {
+            Text = "...",
+            Dock = DockStyle.Fill,
+            Margin = new Padding(4, 0, 0, 0)
+        };
+        lookup_button.Click += on_lookup_click;
+
+        container.Controls.Add(input, 0, 0);
+        container.Controls.Add(lookup_button, 1, 0);
+        AddField(label, container);
     }
 
     protected void AddColumn(string property, string header, string? format = null)
