@@ -13,6 +13,6 @@ internal static class Program
             MessageBox.Show("Vui lòng cấu hình HRM_CONNECTION_STRING theo README.", "Cấu hình SQL Server");
             return;
         }
-        Application.Run(new MainForm(ServiceFactory.CreateEmployeeService(connectionString)));
+        Application.Run(new MainForm(ServiceFactory.CreateEmployeeService(connectionString), connectionString));
     }
 }

@@ -2,13 +2,17 @@
 
 Luồng xử lý: GUI → BUS → DAO → SQL Server. DTO dùng chung để trao đổi dữ liệu, không phải lớp xử lý thứ tư.
 
+Phần web có luồng: trình duyệt (HTML/CSS/JavaScript) → ASP.NET Core Web API → BUS → DAO → SQL Server. API là điểm vào HTTP của lớp giao diện, dùng chung BUS/DAO/DTO với WinForms. Các file giao diện web được phục vụ từ `API/wwwroot`.
+
 Tham chiếu project: GUI → BUS, DTO; BUS → DAO, DTO; DAO → DTO. ServiceFactory khởi tạo các dependency, giữ GUI không tham chiếu trực tiếp DAO.
+
+API → BUS, DTO; API không tham chiếu GUI hoặc DAO. `API/Extensions/ServiceCollectionExtensions.cs` đăng ký service bằng `ServiceFactory` của BUS. Chi tiết: [Web API](web-api.md).
 
 OOP: repository đóng gói truy cập dữ liệu; IEmployeeRepository tách hợp đồng khỏi triển khai; constructor nhận dependency để có thể thay repository khi kiểm thử.
 
 ## Nhóm nghiệp vụ theo màu ERD
 
-Ba thư mục nhóm được đặt trong mỗi project BUS/DAO/DTO và trong GUI/Forms. Namespace của code đã có được cập nhật theo thư mục, ví dụ `BUS.HumanResources.Employees`.
+Ba thư mục nhóm được đặt trong mỗi project BUS/DAO/DTO, trong GUI/Forms, API/Controllers và API/wwwroot/pages. Namespace của code đã có được cập nhật theo thư mục, ví dụ `BUS.HumanResources.Employees`.
 
 | Màu | Nhóm | Thư mục con | Bảng/chức năng |
 |---|---|---|---|
@@ -31,7 +35,7 @@ Ba thư mục nhóm được đặt trong mỗi project BUS/DAO/DTO và trong GU
 
 Các phần dùng chung (kết nối, thống kê, tham số, tra cứu, Excel/PDF) nằm ngoài ba nhóm. Đây là cách tổ chức module trong kiến trúc 3 lớp, không tạo thêm project hoặc lớp kiến trúc.
 
-ERD gốc: [Sơ đồ quản lý nhân sự](diagrams/ERD_quan_ly_nhan_su_chu_lon.drawio). Schema SQL hiện chưa được cập nhật đầy đủ theo ERD; các thư mục mới chỉ là khung phát triển.
+ERD gốc: [Sơ đồ quản lý nhân sự](diagrams/ERD_quan_ly_nhan_su_chu_lon.drawio). ProjectManagement đã triển khai với quan hệ Projects → ProjectDetails → ProjectTasks → Assignments. Mỗi bảng con giữ khóa ngoại đến bảng cha; không có khóa ngoại ngược. Các khác biệt với ERD và quy tắc nhập tay được giải thích trong [ProjectManagement](project-management.md). Các module còn lại chưa đồng bộ đầy đủ với ERD.
 
 ## Các phần hỗ trợ
 
@@ -48,7 +52,7 @@ Các thư mục hỗ trợ hiện chỉ có `.gitkeep`, chưa có triển khai h
 
 - Tên lớp truy cập dữ liệu là DAO; các class repository hiện tại thuộc DAO, không tạo thêm một project DAL song song.
 - `DAO/Infrastructure/MyConnection.cs` tạo kết nối SQL Server, được truyền vào repository qua constructor. Mỗi truy vấn tự mở và giải phóng kết nối.
-- Khi phát triển tìm kiếm, xử lý trên `ArrayList` trong BUS theo đề bài; mã hiện tại chỉ đọc danh sách nhân viên bằng `IReadOnlyList<EmployeeDto>`.
+- ProjectManagement tìm kiếm trên `ArrayList` trong BUS; GUI giữ danh sách đã tải, BUS trả kết quả theo mã/tên/trạng thái và các trường liên quan. Nhân viên vẫn chỉ đọc danh sách bằng `IReadOnlyList<EmployeeDto>`.
 - Form main–sub dùng hai `ListView` cho quan hệ một–nhiều, chẳng hạn chọn nhân viên để hiện danh sách hợp đồng. `MainForm` hiện chưa có bố cục menu trái/form con hoặc phần main–sub này.
 
-Đây là schema và bộ khung ban đầu. Khi phát triển cần bổ sung validation trong BUS, transaction cho thao tác ghi nhiều bảng và migration cho thay đổi database. Nếu đề tài cần đăng nhập, thiết kế thêm xác thực và phân quyền.
+ProjectManagement kiểm tra dữ liệu trong BUS; DAO dùng tham số SQL và mỗi thao tác ghi một bảng. SQL Server chặn xóa khi còn dữ liệu con bằng khóa ngoại không cascade. Script 03 bổ sung bảng vào database cũ; không cần xóa dữ liệu nhân sự. Các module chưa triển khai vẫn cần bổ sung validation, transaction nếu ghi nhiều bảng và migration khi thay đổi schema. Nếu đề tài cần đăng nhập, thiết kế thêm xác thực và phân quyền.

@@ -1,6 +1,6 @@
 # Ứng dụng quản lý nhân sự
 
-Bộ khung C# WinForms + SQL Server, OOP và kiến trúc 3 lớp **GUI → BUS → DAO**. DTO là thư viện truyền dữ liệu dùng chung. Hiện có luồng tải danh sách nhân viên mẫu; các thư mục mở rộng mới chỉ là khung, chưa triển khai CRUD, tìm kiếm, chấm công, tính lương, thống kê hay nhập/xuất file.
+Ứng dụng C# WinForms + SQL Server theo kiến trúc 3 lớp **GUI → BUS → DAO**. DTO là thư viện truyền dữ liệu dùng chung. WinForms có chức năng tải nhân viên và quản lý dự án, công việc, phân công. Màn hình **Chấm công** hỗ trợ quản lý trạng thái và bản ghi chấm công theo bố cục main–sub.
 
 ## Cấu trúc
 
@@ -8,6 +8,19 @@ Bộ khung C# WinForms + SQL Server, OOP và kiến trúc 3 lớp **GUI → BUS 
 HumanResourceManagement.sln
 Directory.Build.props
 src/
+  API/                             # ASP.NET Core Web API + giao diện web tĩnh
+    Controllers/                   # HumanResources, ProjectManagement, SalaryInformation
+    Configuration/                 # Cấu hình kết nối database
+    Extensions/                    # Đăng ký service BUS qua DI
+    Properties/launchSettings.json
+    wwwroot/                       # HTML/CSS/JavaScript
+      index.html
+      css/
+      js/services/                 # Gọi HTTP API
+      pages/                       # Ba nhóm nghiệp vụ, thư mục cho từng module
+    Program.cs
+    appsettings.json
+    API.http                       # Request mẫu
   GUI/
     Forms/
       MainForm.cs                  # Kèm MainForm.Designer.cs
@@ -46,15 +59,20 @@ src/
 database/
   01_CreateDatabase.sql
   02_SeedData.sql
+  03_ProjectManagement.sql
+  04_ProjectManagementSeed.sql
+  05_SalaryInformation.sql
+  06_DemoSeed.sql
 docs/
   diagrams/                        # Ảnh ERD và file draw.io gốc
   architecture.md
   project-requirements.md
+  web-api.md                       # Cấu trúc và cách phát triển phần web
   report/
   screenshots/
 ```
 
-Ba nhóm màu có cùng cách chia module trong `GUI/Forms`, `BUS`, `DAO` và `DTO`:
+Ba nhóm màu có cùng cách chia module trong `GUI/Forms`, `BUS`, `DAO`, `DTO`, `API/Controllers` và `API/wwwroot/pages`:
 
 | Màu trên ERD | Thư mục nhóm | Các module con |
 |---|---|---|
@@ -62,7 +80,7 @@ Ba nhóm màu có cùng cách chia module trong `GUI/Forms`, `BUS`, `DAO` và `D
 | Đỏ | `ProjectManagement` | `Projects`, `ProjectDetails`, `Tasks`, `Assignments` |
 | Xanh lam | `SalaryInformation` | `MonthlyAttendance`, `Attendance`, `AttendanceStatuses`, `Payroll`, `SeniorityAllowanceRules`, `EmployeeSeniorityAllowances`, `EmployeeRewards`, `RewardRules` |
 
-Các phần hỗ trợ như `Lookups`, `Statistics`, `Settings`, nhập/xuất file và kết nối database được dùng chung. Thư mục chưa triển khai có `.gitkeep` để giữ trong Git. Việc chia nhóm chưa thay đổi schema SQL hoặc triển khai chức năng mới.
+Các phần hỗ trợ như `Lookups`, `Statistics`, `Settings`, nhập/xuất file và kết nối database được dùng chung. Thư mục chưa triển khai có `.gitkeep` để giữ trong Git. ProjectManagement đã có code và script SQL riêng; các nhóm còn lại giữ phạm vi hiện có.
 
 ## Sơ đồ cơ sở dữ liệu (ERD)
 
@@ -70,14 +88,14 @@ Các phần hỗ trợ như `Lookups`, `Statistics`, `Settings`, nhập/xuất f
 
 Nhấn vào hình để xem ảnh lớn.
 
-[ERD quản lý nhân sự — file draw.io](docs/diagrams/ERD_quan_ly_nhan_su_chu_lon.drawio)
+[ERD quản lý nhân sự — file draw.io](docs/diagrams/ERD_QLNS.drawio)
 
-Tải file và mở bằng draw.io/diagrams.net để xem hoặc chỉnh sửa. Sơ đồ chia thành ba nhóm màu tương ứng với cấu trúc module ở trên. Các script SQL hiện vẫn là schema khởi đầu, chưa đồng bộ đầy đủ với ERD này.
+Tải file và mở bằng draw.io/diagrams.net để xem hoặc chỉnh sửa. Sơ đồ gốc được giữ làm tài liệu tham khảo. ProjectManagement triển khai theo các điều chỉnh đã thống nhất: quan hệ một–nhiều từ Dự án đến Phân công, bỏ khóa ngoại ngược và bỏ điểm đánh giá đóng góp. Xem [hướng dẫn ProjectManagement](docs/project-management.md).
 
 ## Chạy ứng dụng
 
 1. Cài .NET 10 SDK, SQL Server và IDE hỗ trợ .NET 10/WinForms.
-2. Dùng SQL Server Management Studio chạy lần lượt hai script trong database. Script tạo bảng và dữ liệu mẫu chỉ chạy một lần trên database mới.
+2. Dùng SQL Server Management Studio chạy `database/01_CreateDatabase.sql`, rồi `database/02_SeedData.sql` trên database mới. Nếu đã có database thì bỏ qua hai script này. Tiếp tục chạy `database/03_ProjectManagement.sql` để tạo bốn bảng dự án, rồi chạy `database/05_SalaryInformation.sql` để tạo tám bảng chấm công, lương, phụ cấp và khen thưởng. Có thể chạy `database/04_ProjectManagementSeed.sql` nếu muốn dữ liệu dự án mẫu. Nếu `Attendance` hoặc `Payroll` bản khung cũ đã có dữ liệu, script 05 dừng và giữ dữ liệu để xử lý chuyển đổi riêng.
 3. Mở PowerShell tại thư mục solution:
 
 ```powershell
@@ -89,11 +107,40 @@ dotnet run --project src/GUI
 
 Thay localhost bằng tên SQL Server thực tế, ví dụ .\SQLEXPRESS. TrustServerCertificate=True chỉ dành cho phát triển cục bộ; khi triển khai dùng chứng chỉ hợp lệ. Không lưu mật khẩu vào Git.
 
-Hoặc mở solution trong Visual Studio, đặt GUI làm Startup Project. Cần thiết lập biến môi trường trước khi mở IDE. Bấm **Tải danh sách nhân viên** để kiểm tra kết nối.
+Hoặc mở solution trong Visual Studio, đặt GUI làm Startup Project. Cần thiết lập biến môi trường trước khi mở IDE. Bấm **Tải danh sách nhân viên** để kiểm tra kết nối. Bốn nút **Dự án / Chi tiết dự án / Công việc / Phân công** mở các màn hình quản lý tương ứng.
+
+Để thêm dữ liệu, đi theo thứ tự Dự án → Chi tiết dự án → Công việc → Phân công. Chọn một dòng để sửa, bấm **Thêm mới** để nhập bản ghi mới, rồi **Lưu**. Chỉ xóa được khi không còn dữ liệu con. Trạng thái nhập bằng chữ; tiến độ, thưởng và phụ cấp đều nhập tay. Với ngày hoàn thành chưa có, bỏ dấu chọn ở ô ngày.
+
+Kiểm thử BUS, không cần SQL Server:
+
+```powershell
+dotnet run --project tests/ProjectManagement.Tests
+```
+
+Hướng dẫn đọc code và kiểm thử SQL nằm trong [docs/project-management.md](docs/project-management.md).
+
+## Chấm công
+
+Sau khi chạy script `05_SalaryInformation.sql`, mở WinForms và bấm **Chấm công**. Tạo trạng thái ở danh sách trên, chọn trạng thái để xem các bản ghi ở danh sách dưới. Bấm **…** để tìm và chọn nhân viên trước khi lưu chấm công. Mã bản ghi do SQL Server sinh.
+
+Để có dữ liệu thử, chạy `database/06_DemoSeed.sql` sau script `03`. Script bổ sung đến tổng 55 nhân viên và 12 dự án, giữ các bản ghi đã có.
+
+## Chạy web và API
+
+Sau khi tạo database và đặt `HRM_CONNECTION_STRING` như trên:
+
+```powershell
+dotnet run --project src/API
+```
+
+Mở `http://localhost:5080` để xem trang web khởi đầu. Trang này có nút tải danh sách nhân viên từ `GET /api/employees`. `GET /health` kiểm tra API đang chạy, không kiểm tra database. Có thể dùng file `src/API/API.http` để gửi request.
+
+Web vẫn mở được khi chưa cấu hình database; API nhân viên trả HTTP 503 kèm thông báo cấu hình. Chưa có trang CRUD cho toàn bộ đối tượng. Xem [hướng dẫn web/API](docs/web-api.md) để phát triển tiếp.
 
 ## Quy ước
 
 - GUI gọi BUS, không viết SQL trong Form.
+- JavaScript gọi API qua HTTP; controller gọi BUS. API và GUI là hai phần giao diện của cùng hệ thống, không tham chiếu nhau.
 - BUS kiểm tra dữ liệu và áp dụng quy tắc nghiệp vụ.
 - DAO truy cập SQL Server; dùng tham số SQL khi thêm dữ liệu đầu vào.
 - DTO chỉ chứa dữ liệu, không phụ thuộc UI hay database.
