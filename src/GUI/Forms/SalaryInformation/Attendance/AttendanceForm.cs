@@ -1,6 +1,7 @@
 using System.Collections;
 using BUS.HumanResources.Employees;
 using BUS.SalaryInformation.Attendance;
+using BUS.Settings;
 using DTO.HumanResources.Employees;
 using DTO.SalaryInformation.Attendance;
 using DTO.SalaryInformation.AttendanceStatuses;
@@ -12,11 +13,13 @@ public sealed class AttendanceForm : Form
 {
     private readonly AttendanceService _attendance_service;
     private readonly EmployeeService _employee_service;
+    private readonly SystemParameterService? _parameter_service;
     private readonly TableLayoutPanel _layout = new() { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1 };
     private readonly ListView _status_list = CreateListView();
     private readonly ListView _attendance_list = CreateListView();
     private readonly TextBox _status_search = new() { Width = 200, PlaceholderText = "Tìm trạng thái" };
     private readonly TextBox _record_search = new() { Width = 240, PlaceholderText = "Tìm nhân viên hoặc ngày" };
+    private readonly Label _parameter_label = new() { AutoSize = true, ForeColor = Color.DimGray, Margin = new Padding(8, 7, 0, 0) };
     private readonly TextBox _status_name = new() { Width = 220, MaxLength = 50 };
     private readonly TextBox _status_description = new() { Width = 440, MaxLength = 500 };
     private readonly TextBox _employee_name = new() { Width = 205, ReadOnly = true };
@@ -31,10 +34,11 @@ public sealed class AttendanceForm : Form
     private bool _rendering;
     private bool _busy;
 
-    public AttendanceForm(AttendanceService attendance_service, EmployeeService employee_service)
+    public AttendanceForm(AttendanceService attendance_service, EmployeeService employee_service, SystemParameterService? parameter_service = null)
     {
         _attendance_service = attendance_service;
         _employee_service = employee_service;
+        _parameter_service = parameter_service;
         Text = "Quản lý chấm công";
         StartPosition = FormStartPosition.CenterParent;
         ClientSize = new Size(1100, 740);
@@ -97,6 +101,7 @@ public sealed class AttendanceForm : Form
         });
         AddButton(record_actions, "Lưu chấm công", SaveRecordAsync);
         AddButton(record_actions, "Xóa chấm công", DeleteRecordAsync);
+        record_actions.Controls.Add(_parameter_label);
 
         var record_fields = CreateRow();
         AddField(record_fields, "Nhân viên", _employee_name);
@@ -114,6 +119,13 @@ public sealed class AttendanceForm : Form
 
     private async Task ReloadAsync(int status_id = 0, int record_id = 0)
     {
+        if (_parameter_service is not null)
+        {
+            int work_days = await _parameter_service.GetIntValueAsync("STANDARD_WORK_DAYS", 26);
+            decimal work_hours = await _parameter_service.GetDecimalValueAsync("STANDARD_WORK_HOURS", 8m);
+            _parameter_label.Text = $"(Công chuẩn: {work_days} ngày/tháng · {work_hours:0.##} giờ/ngày)";
+        }
+
         // Nạp cả hai danh sách trước khi thay dữ liệu đang hiển thị.
         List<AttendanceStatusDto> statuses = await _attendance_service.GetStatusesAsync();
         List<AttendanceDto> records = await _attendance_service.GetRecordsAsync();

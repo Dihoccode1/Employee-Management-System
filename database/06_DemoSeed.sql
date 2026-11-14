@@ -9,16 +9,21 @@ IF DB_NAME() <> N'HumanResourceManagement'
 IF OBJECT_ID(N'dbo.Employees', N'U') IS NULL OR OBJECT_ID(N'dbo.Projects', N'U') IS NULL
     THROW 50021, N'Cần chạy 01_CreateDatabase.sql và 03_ProjectManagement.sql trước.', 1;
 
-DECLARE @departments TABLE (SortOrder INT PRIMARY KEY, Code VARCHAR(20), Name NVARCHAR(100));
+DECLARE @departments TABLE (SortOrder INT PRIMARY KEY, Code VARCHAR(20), Name NVARCHAR(100), Description NVARCHAR(500));
 INSERT @departments VALUES
-    (1, 'HR', N'Nhân sự'), (2, 'IT', N'Công nghệ thông tin'),
-    (3, 'FIN', N'Tài chính'), (4, 'OPS', N'Vận hành'),
-    (5, 'SALES', N'Kinh doanh'), (6, 'MKT', N'Tiếp thị');
+    (1, 'HR', N'Nhân sự', N'Quản lý hồ sơ nhân sự, tuyển dụng và phúc lợi'),
+    (2, 'IT', N'Công nghệ thông tin', N'Phát triển phần mềm và hạ tầng kỹ thuật'),
+    (3, 'FIN', N'Tài chính', N'Kế toán, ngân sách và kiểm soát chi phí'),
+    (4, 'OPS', N'Vận hành', N'Điều phối vận hành và tài sản doanh nghiệp'),
+    (5, 'SALES', N'Kinh doanh', N'Phát triển thị trường và chăm sóc khách hàng'),
+    (6, 'MKT', N'Tiếp thị', N'Truyền thông, thương hiệu và khảo sát thị trường');
 
-DECLARE @positions TABLE (Code VARCHAR(20) PRIMARY KEY, Name NVARCHAR(100));
+DECLARE @positions TABLE (Code VARCHAR(20) PRIMARY KEY, Name NVARCHAR(100), Description NVARCHAR(500), AllowanceAmount DECIMAL(18,2));
 INSERT @positions VALUES
-    ('STAFF', N'Nhân viên'), ('ANALYST', N'Chuyên viên'),
-    ('LEAD', N'Trưởng nhóm'), ('MANAGER', N'Trưởng phòng');
+    ('STAFF', N'Nhân viên', N'Nhân viên thực hiện nghiệp vụ chuyên môn', 500000),
+    ('ANALYST', N'Chuyên viên', N'Chuyên viên phân tích và tổng hợp nghiệp vụ', 1200000),
+    ('LEAD', N'Trưởng nhóm', N'Điều phối công việc nhóm chuyên môn', 2000000),
+    ('MANAGER', N'Trưởng phòng', N'Quản lý và điều hành phòng ban', 3500000);
 
 DECLARE @project_samples TABLE (
     SortOrder INT PRIMARY KEY,
@@ -56,20 +61,22 @@ BEGIN TRY
 
     IF @employees_to_add > 0 OR @projects_to_add > 0
     BEGIN
-        INSERT dbo.Departments (Code, Name)
-        SELECT sample.Code, sample.Name FROM @departments AS sample
+        INSERT dbo.Departments (Code, Name, Description)
+        SELECT sample.Code, sample.Name, sample.Description FROM @departments AS sample
         WHERE NOT EXISTS (SELECT 1 FROM dbo.Departments AS existing WHERE existing.Code = sample.Code);
     END;
 
     IF @employees_to_add > 0
     BEGIN
-        INSERT dbo.Positions (Code, Name)
-        SELECT sample.Code, sample.Name FROM @positions AS sample
+        INSERT dbo.Positions (Code, Name, Description, AllowanceAmount)
+        SELECT sample.Code, sample.Name, sample.Description, sample.AllowanceAmount FROM @positions AS sample
         WHERE NOT EXISTS (SELECT 1 FROM dbo.Positions AS existing WHERE existing.Code = sample.Code);
 
-        -- Ghép 5 họ/tên đệm với 11 tên để tạo danh sách 55 nhân viên giả lập.
+        -- Ghép 5 họ/tên đệm với 11 tên để tạo danh sách 55 nhân viên giả lập đầy đủ thuộc tính ERD.
         WITH employee_samples AS (
             SELECT (family.SortOrder - 1) * 11 + given.SortOrder AS SortOrder,
+                   family.Name AS LastName,
+                   given.Name AS FirstName,
                    CONCAT(family.Name, N' ', given.Name) AS FullName
             FROM (VALUES (1, N'Nguyễn Minh'), (2, N'Trần Thanh'), (3, N'Lê Hoài'),
                          (4, N'Phạm Gia'), (5, N'Võ Bảo')) AS family(SortOrder, Name)
@@ -77,11 +84,34 @@ BEGIN TRY
                                (5, N'Duy'), (6, N'Hà'), (7, N'Hân'), (8, N'Khang'),
                                (9, N'Linh'), (10, N'Phúc'), (11, N'Trang')) AS given(SortOrder, Name)
         )
-        INSERT dbo.Employees (EmployeeCode, FullName, Email, DepartmentId, PositionId, HireDate, IsActive)
-        SELECT TOP (@employees_to_add) code.EmployeeCode, sample.FullName,
-               CONCAT(LOWER(code.EmployeeCode), '@nnt-demo.example'), department.Id, position.Id,
+        INSERT dbo.Employees (
+            EmployeeCode, LastName, FirstName, FullName, DateOfBirth, Gender, PhoneNumber, Email,
+            DepartmentId, PositionId, HireDate, Status, IsActive, CurrentBaseSalary, Degree)
+        SELECT TOP (@employees_to_add)
+               code.EmployeeCode,
+               sample.LastName,
+               sample.FirstName,
+               sample.FullName,
+               DATEADD(YEAR, -(23 + (sample.SortOrder % 15)), CONVERT(DATE, '2026-01-01')),
+               CASE WHEN sample.SortOrder % 2 = 0 THEN N'Nữ' ELSE N'Nam' END,
+               CONCAT('09', RIGHT(CONCAT('00000000', 10000000 + sample.SortOrder * 137), 8)),
+               CONCAT(LOWER(code.EmployeeCode), '@nnt-demo.example'),
+               department.Id,
+               position.Id,
                DATEADD(DAY, sample.SortOrder * 21, CONVERT(DATE, '2022-01-03')),
-               CASE WHEN sample.SortOrder > 52 THEN 0 ELSE 1 END
+               CASE WHEN sample.SortOrder > 52 THEN N'Đã nghỉ việc' ELSE N'Đang làm việc' END,
+               CASE WHEN sample.SortOrder > 52 THEN 0 ELSE 1 END,
+               CASE
+                   WHEN sample.SortOrder <= 6 THEN 25000000
+                   WHEN sample.SortOrder <= 12 THEN 18000000
+                   WHEN sample.SortOrder % 3 = 0 THEN 14000000
+                   ELSE 10000000
+               END,
+               CASE
+                   WHEN sample.SortOrder <= 12 THEN N'Thạc sĩ'
+                   WHEN sample.SortOrder % 4 = 0 THEN N'Cao đẳng'
+                   ELSE N'Đại học'
+               END
         FROM employee_samples AS sample
         CROSS APPLY (VALUES (CONCAT('DEMO', RIGHT(CONCAT('000', sample.SortOrder), 3)))) AS code(EmployeeCode)
         JOIN @departments AS department_sample ON department_sample.SortOrder = (sample.SortOrder - 1) % 6 + 1
@@ -95,6 +125,18 @@ BEGIN TRY
         WHERE NOT EXISTS (SELECT 1 FROM dbo.Employees AS existing WHERE existing.EmployeeCode = code.EmployeeCode)
         ORDER BY sample.SortOrder;
     END;
+
+    -- Bổ sung hợp đồng mẫu cho các nhân viên chưa có hợp đồng để test màn hình Main-Sub.
+    INSERT dbo.Contracts (EmployeeId, ContractCode, ContractType, StartDate, EndDate, BaseSalary, Status)
+    SELECT e.Id,
+           CONCAT('HD-', e.EmployeeCode),
+           CASE WHEN e.IsActive = 1 THEN N'Xác định thời hạn' ELSE N'Thử việc' END,
+           e.HireDate,
+           CASE WHEN e.IsActive = 1 THEN DATEADD(YEAR, 2, e.HireDate) ELSE DATEADD(MONTH, 3, e.HireDate) END,
+           CASE WHEN e.CurrentBaseSalary > 0 THEN e.CurrentBaseSalary ELSE 10000000 END,
+           CASE WHEN e.IsActive = 1 THEN N'Còn hiệu lực' ELSE N'Hết hiệu lực' END
+    FROM dbo.Employees AS e
+    WHERE NOT EXISTS (SELECT 1 FROM dbo.Contracts AS c WHERE c.EmployeeId = e.Id);
 
     -- Ưu tiên nhân viên đang làm việc cùng phòng ban khi chọn quản lý dự án.
     INSERT dbo.Projects (Name, StartDate, EndDate, Deadline, Description, Budget, DepartmentId, ManagerId, Status)
@@ -124,5 +166,6 @@ BEGIN CATCH
 END CATCH;
 
 SELECT (SELECT COUNT(*) FROM dbo.Employees) AS EmployeeCount,
+       (SELECT COUNT(*) FROM dbo.Contracts) AS ContractCount,
        (SELECT COUNT(*) FROM dbo.Projects) AS ProjectCount;
 GO

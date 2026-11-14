@@ -10,6 +10,7 @@ using GUI.Forms.ProjectManagement.ProjectDetails;
 using GUI.Forms.ProjectManagement.Projects;
 using GUI.Forms.ProjectManagement.Tasks;
 using GUI.Forms.SalaryInformation.Attendance;
+using GUI.Forms.Settings;
 
 namespace GUI.Forms;
 
@@ -36,13 +37,13 @@ public partial class MainForm : Form
         var tiles = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 5,
+            ColumnCount = 6,
             RowCount = 2,
-            Padding = new Padding(26, 24, 26, 24),
+            Padding = new Padding(22, 24, 22, 24),
             Margin = Padding.Empty
         };
         for (int column = 0; column < tiles.ColumnCount; column++)
-            tiles.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20));
+            tiles.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / tiles.ColumnCount));
         for (int row = 0; row < tiles.RowCount; row++)
             tiles.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
 
@@ -54,8 +55,11 @@ public partial class MainForm : Form
             () => new DepartmentForm(connection_string));
         AddTile(tiles, 3, 0, "Chức vụ", "\uE8F9", Color.FromArgb(249, 199, 102),
             () => new PositionForm(connection_string));
-        AddTile(tiles, 4, 0, "Hợp đồng", "\uE8A5", Color.FromArgb(208, 168, 247),
+        AddTile(tiles, 4, 0, "Hợp đồng\n(Main–Sub)", "\uE8A5", Color.FromArgb(208, 168, 247),
             () => new ContractForm(connection_string));
+        AddTile(tiles, 5, 0, "Tham số\nnghiệp vụ", "\uE713", Color.FromArgb(170, 214, 154),
+            () => new SystemParameterForm(ServiceFactory.CreateSystemParameterService(connection_string)));
+
         AddTile(tiles, 0, 1, "Dự án", "\uE8B7", Color.FromArgb(246, 164, 116),
             () => new ProjectForm(ServiceFactory.CreateProjectService(connection_string),
                 ServiceFactory.CreateProjectLookupService(connection_string)));
@@ -70,7 +74,10 @@ public partial class MainForm : Form
                 ServiceFactory.CreateProjectTaskService(connection_string),
                 ServiceFactory.CreateProjectLookupService(connection_string)));
         AddTile(tiles, 4, 1, "Chấm công", "\uE823", Color.FromArgb(102, 224, 207),
-            () => new AttendanceForm(ServiceFactory.CreateAttendanceService(connection_string), employee_service));
+            () => new AttendanceForm(
+                ServiceFactory.CreateAttendanceService(connection_string),
+                employee_service,
+                ServiceFactory.CreateSystemParameterService(connection_string)));
 
         layout.Controls.Add(new ManagementMenuHeader(), 0, 0);
         layout.Controls.Add(tiles, 0, 1);
